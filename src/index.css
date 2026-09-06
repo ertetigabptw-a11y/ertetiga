@@ -1,0 +1,343 @@
+@import "tailwindcss";
+
+/* High-Legibility Modern Interface Typography & Theme */
+:root {
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f8fafc;
+  color: #0f172a;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+
+/* Custom minimal scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ==========================================================================
+   High-Contrast & Legibility System (.sleek-content)
+   Guarantees all text is clearly readable without conflicting colors.
+   ========================================================================== */
+
+.sleek-content {
+  font-family: var(--font-sans);
+  color: #0f172a;
+}
+
+/* 1. Cards & Containers: Crisp White Surfaces with Slate Borders */
+.sleek-content .bg-slate-950,
+.sleek-content .bg-slate-900,
+.sleek-content .bg-slate-900\/95,
+.sleek-content .bg-slate-900\/90,
+.sleek-content .bg-slate-900\/80,
+.sleek-content .bg-slate-900\/70,
+.sleek-content .bg-slate-900\/50,
+.sleek-content .bg-slate-800,
+.sleek-content .bg-slate-800\/90,
+.sleek-content .bg-slate-800\/80,
+.sleek-content .bg-slate-800\/70,
+.sleek-content .bg-slate-800\/60,
+.sleek-content .bg-slate-800\/50 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.04) !important;
+}
+
+.sleek-content .border-slate-800,
+.sleek-content .border-slate-700,
+.sleek-content .border-slate-700\/80,
+.sleek-content .border-slate-700\/60,
+.sleek-content .border-slate-700\/50,
+.sleek-content .border-slate-800\/80,
+.sleek-content .border-slate-800\/60 {
+  border-color: #e2e8f0 !important;
+}
+
+/* 2. Card Typography: Strong Contrast, No Faded Grays */
+.sleek-content h1,
+.sleek-content h2,
+.sleek-content h3,
+.sleek-content h4,
+.sleek-content .text-slate-900 {
+  color: #0f172a !important;
+  font-weight: 700;
+}
+
+/* Text that was originally white on dark cards now renders as deep readable dark navy on white cards */
+.sleek-content div:not([class*="bg-indigo"]):not([class*="bg-emerald"]):not([class*="bg-blue"]):not([class*="bg-rose"]):not([class*="bg-purple"]):not([class*="bg-amber-600"]) > .text-white,
+.sleek-content p.text-white,
+.sleek-content h1.text-white,
+.sleek-content h2.text-white,
+.sleek-content h3.text-white,
+.sleek-content h4.text-white,
+.sleek-content span.text-white:not([class*="bg-"]):not(button *) {
+  color: #0f172a !important;
+}
+
+.sleek-content .text-slate-100,
+.sleek-content .text-slate-200,
+.sleek-content .text-slate-300 {
+  color: #1e293b !important;
+}
+
+.sleek-content .text-slate-400,
+.sleek-content .text-slate-500 {
+  color: #475569 !important; /* WCAG AAA high-contrast slate-600 */
+}
+
+/* 3. Solid Action Buttons & Badges: ALWAYS PURE WHITE TEXT */
+.sleek-content button.bg-indigo-600,
+.sleek-content button.bg-indigo-700,
+.sleek-content button.bg-emerald-600,
+.sleek-content button.bg-emerald-700,
+.sleek-content button.bg-teal-600,
+.sleek-content button.bg-blue-600,
+.sleek-content button.bg-rose-600,
+.sleek-content button.bg-red-600,
+.sleek-content button.bg-amber-600,
+.sleek-content button.bg-purple-600,
+.sleek-content .bg-indigo-600,
+.sleek-content .bg-indigo-700,
+.sleek-content .bg-emerald-600,
+.sleek-content .bg-blue-600,
+.sleek-content .bg-rose-600 {
+  color: #ffffff !important;
+}
+
+.sleek-content button.bg-indigo-600 *,
+.sleek-content button.bg-indigo-700 *,
+.sleek-content button.bg-emerald-600 *,
+.sleek-content button.bg-emerald-700 *,
+.sleek-content button.bg-teal-600 *,
+.sleek-content button.bg-blue-600 *,
+.sleek-content button.bg-rose-600 *,
+.sleek-content button.bg-red-600 *,
+.sleek-content button.bg-amber-600 *,
+.sleek-content button.bg-purple-600 *,
+.sleek-content .bg-indigo-600 *,
+.sleek-content .bg-indigo-700 *,
+.sleek-content .bg-emerald-600 *,
+.sleek-content .bg-blue-600 *,
+.sleek-content .bg-rose-600 * {
+  color: #ffffff !important;
+}
+
+/* 4. Secondary & Utility Buttons (Excel, Cetak, Filter, Edit) */
+.sleek-content button.bg-slate-900,
+.sleek-content button.bg-slate-800,
+.sleek-content button.bg-slate-700 {
+  background-color: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+  font-weight: 600 !important;
+}
+.sleek-content button.bg-slate-900:hover,
+.sleek-content button.bg-slate-800:hover,
+.sleek-content button.bg-slate-700:hover {
+  background-color: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
+.sleek-content button.bg-slate-900 *,
+.sleek-content button.bg-slate-800 *,
+.sleek-content button.bg-slate-700 * {
+  color: #1e293b !important;
+}
+
+/* 5. Status Badges & Pills: High-Contrast Dark Ink on Soft Pastel Surfaces */
+
+/* Green: Lunas, Dihuni, Hadir, Sukses, Dalam Radius */
+.sleek-content .bg-emerald-950,
+.sleek-content .bg-emerald-950\/80,
+.sleek-content .bg-emerald-950\/60,
+.sleek-content .bg-emerald-950\/50,
+.sleek-content .bg-emerald-950\/40,
+.sleek-content .bg-emerald-950\/30 {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+  color: #065f46 !important;
+}
+.sleek-content .bg-emerald-950 *,
+.sleek-content .bg-emerald-950\/40 * {
+  color: #065f46 !important;
+}
+.sleek-content .text-emerald-300,
+.sleek-content .text-emerald-400 {
+  color: #047857 !important;
+  font-weight: 700 !important;
+}
+
+/* Amber: Pending, Kosong, Peringatan */
+.sleek-content .bg-amber-950,
+.sleek-content .bg-amber-950\/80,
+.sleek-content .bg-amber-950\/60,
+.sleek-content .bg-amber-950\/50,
+.sleek-content .bg-amber-950\/40,
+.sleek-content .bg-amber-950\/30 {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+  color: #92400e !important;
+}
+.sleek-content .bg-amber-950 *,
+.sleek-content .bg-amber-950\/40 * {
+  color: #92400e !important;
+}
+.sleek-content .text-amber-300,
+.sleek-content .text-amber-400 {
+  color: #b45309 !important;
+  font-weight: 700 !important;
+}
+
+/* Rose / Red: Belum Bayar, Alpa, Batal, Di Luar Radius */
+.sleek-content .bg-rose-950,
+.sleek-content .bg-rose-950\/80,
+.sleek-content .bg-rose-950\/60,
+.sleek-content .bg-rose-950\/50,
+.sleek-content .bg-rose-950\/40,
+.sleek-content .bg-rose-950\/30 {
+  background-color: #fff1f2 !important;
+  border-color: #fecdd3 !important;
+  color: #9f1239 !important;
+}
+.sleek-content .bg-rose-950 *,
+.sleek-content .bg-rose-950\/40 * {
+  color: #9f1239 !important;
+}
+.sleek-content .text-rose-300,
+.sleek-content .text-rose-400 {
+  color: #be123c !important;
+  font-weight: 700 !important;
+}
+
+/* Blue: Info, Keamanan, Ronda */
+.sleek-content .bg-blue-950,
+.sleek-content .bg-blue-950\/80,
+.sleek-content .bg-blue-950\/60,
+.sleek-content .bg-blue-950\/50,
+.sleek-content .bg-blue-950\/40,
+.sleek-content .bg-blue-950\/30 {
+  background-color: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  color: #1e40af !important;
+}
+.sleek-content .bg-blue-950 *,
+.sleek-content .bg-blue-950\/40 * {
+  color: #1e40af !important;
+}
+.sleek-content .text-blue-300,
+.sleek-content .text-blue-400 {
+  color: #1d4ed8 !important;
+  font-weight: 700 !important;
+}
+
+/* Purple: Super Admin & Pusat Otoritas */
+.sleek-content .bg-purple-950,
+.sleek-content .bg-purple-950\/80,
+.sleek-content .bg-purple-950\/70,
+.sleek-content .bg-purple-950\/60,
+.sleek-content .bg-purple-950\/50,
+.sleek-content .bg-purple-950\/40,
+.sleek-content .bg-purple-950\/30 {
+  background-color: #f5f3ff !important;
+  border-color: #ddd6fe !important;
+  color: #5b21b6 !important;
+}
+.sleek-content .bg-purple-950 *,
+.sleek-content .bg-purple-950\/40 * {
+  color: #5b21b6 !important;
+}
+.sleek-content .text-purple-300,
+.sleek-content .text-purple-400 {
+  color: #6d28d9 !important;
+  font-weight: 700 !important;
+}
+
+/* Teal: Portal Warga */
+.sleek-content .bg-teal-950,
+.sleek-content .bg-teal-950\/80,
+.sleek-content .bg-teal-950\/70,
+.sleek-content .bg-teal-950\/60,
+.sleek-content .bg-teal-950\/50,
+.sleek-content .bg-teal-950\/40,
+.sleek-content .bg-teal-950\/30 {
+  background-color: #f0fdfa !important;
+  border-color: #99f6e4 !important;
+  color: #115e59 !important;
+}
+.sleek-content .bg-teal-950 *,
+.sleek-content .bg-teal-950\/40 * {
+  color: #115e59 !important;
+}
+.sleek-content .text-teal-300,
+.sleek-content .text-teal-400 {
+  color: #0f766e !important;
+  font-weight: 700 !important;
+}
+
+/* 6. Form Inputs, Selects & Textareas */
+.sleek-content input:not([type="checkbox"]):not([type="radio"]),
+.sleek-content select,
+.sleek-content textarea {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  font-weight: 500 !important;
+  border-radius: 0.75rem !important;
+}
+
+.sleek-content input:not([type="checkbox"]):not([type="radio"]):focus,
+.sleek-content select:focus,
+.sleek-content textarea:focus {
+  background-color: #ffffff !important;
+  border-color: #4f46e5 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15) !important;
+}
+
+.sleek-content input::placeholder,
+.sleek-content textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* 7. Data Tables */
+.sleek-content table {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+.sleek-content th {
+  background-color: #f8fafc !important;
+  color: #334155 !important;
+  border-color: #e2e8f0 !important;
+  font-weight: 700 !important;
+}
+.sleek-content td {
+  border-color: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+.sleek-content tr:hover td {
+  background-color: #f8fafc !important;
+}
+
+/* 8. Modal Backdrop and Card */
+.sleek-content .fixed.inset-0 {
+  background-color: rgba(15, 23, 42, 0.6) !important;
+}

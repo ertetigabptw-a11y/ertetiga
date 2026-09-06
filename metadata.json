@@ -1,0 +1,6 @@
+{
+  "name": "Neo PoRT3",
+  "description": "Portal Warga RT.03 RW.14 Perum BPTW Cilacap - Pelaporan keluhan warga, sistem keamanan & presensi ronda GPS, serta pemantauan iuran lingkungan dan kas RT transparan.",
+  "requestFramePermissions": ["camera", "geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
