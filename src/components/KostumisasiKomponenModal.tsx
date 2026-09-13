@@ -94,24 +94,24 @@ export const KostumisasiKomponenModal: React.FC<KostumisasiKomponenModalProps> =
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl space-y-0">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl space-y-0 text-slate-800">
         {/* Header */}
-        <div className="p-4 bg-slate-800/80 border-b border-slate-700 flex items-center justify-between">
+        <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            <div className="p-2 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-300">
               <Sliders className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white">Kostumisasi 5 Komponen Iuran</h3>
-              <div className="text-xs text-slate-400 flex items-center gap-1.5 flex-wrap">
-                <span>{warga.nama} • Kavling {warga.blokNo}</span>
+              <h3 className="text-sm font-bold text-slate-900">Kostumisasi 5 Komponen Iuran</h3>
+              <div className="text-xs text-slate-600 flex items-center gap-1.5 flex-wrap">
+                <span className="font-semibold text-slate-800">{warga.nama} • Kavling {warga.blokNo}</span>
                 {warga.statusUsiaPenghuni && warga.statusUsiaPenghuni !== '-' && (
                   <span
                     className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
                       warga.statusUsiaPenghuni === 'Lansia'
-                        ? 'bg-amber-950 text-amber-300 border border-amber-500/40'
-                        : 'bg-indigo-950 text-indigo-300 border border-indigo-500/40'
+                        ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                        : 'bg-indigo-100 text-indigo-800 border border-indigo-300'
                     }`}
                   >
                     {warga.statusUsiaPenghuni === 'Lansia' ? '👴 Lansia' : '⚡ Produktif'}
@@ -123,7 +123,7 @@ export const KostumisasiKomponenModal: React.FC<KostumisasiKomponenModalProps> =
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-200 transition"
           >
             <X className="w-4 h-4" />
           </button>
@@ -133,35 +133,35 @@ export const KostumisasiKomponenModal: React.FC<KostumisasiKomponenModalProps> =
         <div className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
           {/* Quick Presets */}
           <div className="space-y-1.5">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+            <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
               Pilih Preset Cepat:
             </span>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
               <button
                 type="button"
                 onClick={() => applyPreset('standar')}
-                className="px-2.5 py-1.5 rounded-xl bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/40 text-xs font-semibold text-center transition active:scale-95"
+                className="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-semibold text-center transition active:scale-95"
               >
                 Standar (50k)
               </button>
               <button
                 type="button"
                 onClick={() => applyPreset('lansia')}
-                className="px-2.5 py-1.5 rounded-xl bg-purple-950/60 hover:bg-purple-900 text-purple-300 border border-purple-500/40 text-xs font-semibold text-center transition active:scale-95"
+                className="px-2.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-300 text-xs font-semibold text-center transition active:scale-95"
               >
                 Lansia (30k)
               </button>
               <button
                 type="button"
                 onClick={() => applyPreset('luarkota')}
-                className="px-2.5 py-1.5 rounded-xl bg-blue-950/60 hover:bg-blue-900 text-blue-300 border border-blue-500/40 text-xs font-semibold text-center transition active:scale-95"
+                className="px-2.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 text-xs font-semibold text-center transition active:scale-95"
               >
                 Luar Kota (32k)
               </button>
               <button
                 type="button"
                 onClick={() => applyPreset('bebas')}
-                className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 text-xs font-semibold text-center transition active:scale-95"
+                className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs font-semibold text-center transition active:scale-95"
               >
                 Bebas / Kosong (0k)
               </button>
@@ -169,18 +169,18 @@ export const KostumisasiKomponenModal: React.FC<KostumisasiKomponenModalProps> =
           </div>
 
           {/* Form 5 Komponen */}
-          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-            <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block border-b border-slate-800 pb-1.5">
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+            <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wider block border-b border-slate-200 pb-1.5">
               Rincian Nominal 5 Komponen Warga:
             </span>
 
             {/* Dansos RT */}
             <div className="flex items-center justify-between gap-3 text-xs">
-              <label htmlFor="dansosRTInput" className="text-slate-300 font-medium">
+              <label htmlFor="dansosRTInput" className="text-slate-800 font-semibold">
                 1. Dansos RT (Rutin Kas RT)
               </label>
               <div className="relative w-36">
-                <span className="absolute left-2.5 top-2 text-slate-500 font-mono text-xs">Rp</span>
+                <span className="absolute left-2.5 top-2 text-slate-400 font-mono text-xs">Rp</span>
                 <input
                   id="dansosRTInput"
                   type="number"
@@ -188,18 +188,18 @@ export const KostumisasiKomponenModal: React.FC<KostumisasiKomponenModalProps> =
                   step="1000"
                   value={dansosRT}
                   onChange={(e) => setDansosRT(Number(e.target.value) || 0)}
-                  className="w-full pl-8 pr-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono text-right text-xs focus:outline-none focus:border-emerald-500"
+                  className="w-full pl-8 pr-2.5 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-right text-xs focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 font-semibold"
                 />
               </div>
             </div>
 
             {/* Dansos RW */}
             <div className="flex items-center justify-between gap-3 text-xs">
-              <label htmlFor="dansosRWInput" className="text-slate-300 font-medium">
+              <label htmlFor="dansosRWInput" className="text-slate-800 font-semibold">
                 2. Dansos RW (Rutin Kas RW)
               </label>
               <div className="relative w-36">
-                <span className="absolute left-2.5 top-2 text-slate-500 font-mono text-xs">Rp</span>
+                <span className="absolute left-2.5 top-2 text-slate-400 font-mono text-xs">Rp</span>
                 <input
                   id="dansosRWInput"
                   type="number"
@@ -207,18 +207,18 @@ export const KostumisasiKomponenModal: React.FC<KostumisasiKomponenModalProps> =
                   step="1000"
                   value={dansosRW}
                   onChange={(e) => setDansosRW(Number(e.target.value) || 0)}
-                  className="w-full pl-8 pr-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono text-right text-xs focus:outline-none focus:border-emerald-500"
+                  className="w-full pl-8 pr-2.5 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-right text-xs focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 font-semibold"
                 />
               </div>
             </div>
 
             {/* Pembangunan */}
             <div className="flex items-center justify-between gap-3 text-xs">
-              <label htmlFor="pembangunanInput" className="text-slate-300 font-medium">
+              <label htmlFor="pembangunanInput" className="text-slate-800 font-semibold">
                 3. Pembangunan Sarpras
               </label>
               <div className="relative w-36">
-                <span className="absolute left-2.5 top-2 text-slate-500 font-mono text-xs">Rp</span>
+                <span className="absolute left-2.5 top-2 text-slate-400 font-mono text-xs">Rp</span>
                 <input
                   id="pembangunanInput"
                   type="number"
@@ -226,18 +226,18 @@ export const KostumisasiKomponenModal: React.FC<KostumisasiKomponenModalProps> =
                   step="1000"
                   value={pembangunan}
                   onChange={(e) => setPembangunan(Number(e.target.value) || 0)}
-                  className="w-full pl-8 pr-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono text-right text-xs focus:outline-none focus:border-emerald-500"
+                  className="w-full pl-8 pr-2.5 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-right text-xs focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 font-semibold"
                 />
               </div>
             </div>
 
             {/* Snack Rapat */}
             <div className="flex items-center justify-between gap-3 text-xs">
-              <label htmlFor="snackInput" className="text-slate-300 font-medium">
+              <label htmlFor="snackInput" className="text-slate-800 font-semibold">
                 4. Snack Rapat Warga
               </label>
               <div className="relative w-36">
-                <span className="absolute left-2.5 top-2 text-slate-500 font-mono text-xs">Rp</span>
+                <span className="absolute left-2.5 top-2 text-slate-400 font-mono text-xs">Rp</span>
                 <input
                   id="snackInput"
                   type="number"
@@ -245,18 +245,18 @@ export const KostumisasiKomponenModal: React.FC<KostumisasiKomponenModalProps> =
                   step="1000"
                   value={snackRapat}
                   onChange={(e) => setSnackRapat(Number(e.target.value) || 0)}
-                  className="w-full pl-8 pr-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono text-right text-xs focus:outline-none focus:border-emerald-500"
+                  className="w-full pl-8 pr-2.5 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-right text-xs focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 font-semibold"
                 />
               </div>
             </div>
 
             {/* Jimpitan */}
             <div className="flex items-center justify-between gap-3 text-xs">
-              <label htmlFor="jimpitanInput" className="text-slate-300 font-medium">
+              <label htmlFor="jimpitanInput" className="text-slate-800 font-semibold">
                 5. Jimpitan / Kebersihan
               </label>
               <div className="relative w-36">
-                <span className="absolute left-2.5 top-2 text-slate-500 font-mono text-xs">Rp</span>
+                <span className="absolute left-2.5 top-2 text-slate-400 font-mono text-xs">Rp</span>
                 <input
                   id="jimpitanInput"
                   type="number"
@@ -264,32 +264,32 @@ export const KostumisasiKomponenModal: React.FC<KostumisasiKomponenModalProps> =
                   step="1000"
                   value={jimpitan}
                   onChange={(e) => setJimpitan(Number(e.target.value) || 0)}
-                  className="w-full pl-8 pr-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono text-right text-xs focus:outline-none focus:border-emerald-500"
+                  className="w-full pl-8 pr-2.5 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-right text-xs focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 font-semibold"
                 />
               </div>
             </div>
           </div>
 
           {/* Total Preview */}
-          <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-950/70 to-teal-950/70 border border-emerald-500/40 flex items-center justify-between">
+          <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-300 flex items-center justify-between">
             <div>
-              <span className="text-xs font-bold text-emerald-300 block">Total Iuran Wajib Baru</span>
-              <span className="text-[10px] text-slate-400">
+              <span className="text-xs font-bold text-emerald-800 block">Total Iuran Wajib Baru</span>
+              <span className="text-[10px] text-slate-600">
                 Akan langsung diterapkan pada kartu tagihan bulan berjalan
               </span>
             </div>
-            <span className="font-mono text-lg font-black text-emerald-300">
+            <span className="font-mono text-lg font-black text-emerald-700">
               {formatRupiah(totalIuran)}
             </span>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-slate-800/80 border-t border-slate-700 flex items-center justify-end gap-2">
+        <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition"
+            className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-semibold transition"
           >
             Batal
           </button>

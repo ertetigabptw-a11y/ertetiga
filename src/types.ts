@@ -261,6 +261,26 @@ export interface PiutangWargaLainnya {
   jatuhTempo?: string;
 }
 
+export interface LaporanBukuKasBulanan {
+  id: string;
+  periode: string; // e.g. "Oktober 2026", "November 2026"
+  tanggalClosing: string;
+  saldoAwalKas: number;
+  totalPemasukan: number;
+  totalPengeluaran: number;
+  saldoAkhirKas: number;
+  totalPiutangWarga: number;
+  totalDepositWarga: number;
+  totalHutangRT: number;
+  wargaMenunggakCount: number;
+  wargaDepositCount: number;
+  wargaLunasCount: number;
+  tagihanSnapshot: TagihanWarga[];
+  pemasukanSnapshot: PemasukanKas[];
+  pengeluaranSnapshot: PengeluaranKas[];
+  catatan?: string;
+}
+
 export interface AppSettings {
   fonnteToken: string;
   targetGroupWa: string;
@@ -272,4 +292,6 @@ export interface AppSettings {
   jamMulaiRonda: string; // "22:00"
   jamSelesaiRonda: string; // "23:59"
   tarifKerjaBaktiDenda: number; // 25000
+  saldoAwalKas?: number; // Saldo awal pembukuan kas RT (bisa diisi oleh Super Admin, default 0)
+  periodeAwalPembukuan?: string; // e.g. "Oktober 2026"
 }

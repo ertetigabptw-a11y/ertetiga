@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { formatRupiah } from '../utils/exportUtils';
 import {
   Calendar,
@@ -53,7 +53,25 @@ export const ClosingBulanModal: React.FC<ClosingBulanModalProps> = ({
   totalDepositWarga,
   countWargaDeposit,
 }) => {
-  const [newPeriodeName, setNewPeriodeName] = useState<string>('Oktober 2026');
+  const getNextMonthSuggestion = (cur: string) => {
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    const parts = (cur || '').trim().split(' ');
+    if (parts.length === 2) {
+      const idx = months.indexOf(parts[0]);
+      const year = parseInt(parts[1], 10);
+      if (idx !== -1 && !isNaN(year)) {
+        const nextIdx = (idx + 1) % 12;
+        const nextYear = nextIdx === 0 ? year + 1 : year;
+        return `${months[nextIdx]} ${nextYear}`;
+      }
+    }
+    return 'November 2026';
+  };
+
+  const [newPeriodeName, setNewPeriodeName] = useState<string>(() => getNextMonthSuggestion(activePeriode));
   const [confirmCheck, setConfirmCheck] = useState<boolean>(false);
   const [closingResult, setClosingResult] = useState<{
     periodeLama: string;
@@ -67,6 +85,14 @@ export const ClosingBulanModal: React.FC<ClosingBulanModalProps> = ({
     wargaMenunggakCount: number;
     wargaDepositCount: number;
   } | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setNewPeriodeName(getNextMonthSuggestion(activePeriode));
+      setConfirmCheck(false);
+      setClosingResult(null);
+    }
+  }, [isOpen, activePeriode]);
 
   if (!isOpen) return null;
 

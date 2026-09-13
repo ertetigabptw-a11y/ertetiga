@@ -16,6 +16,7 @@ import {
   HutangRT,
   PiutangWargaLainnya,
   AppSettings,
+  LaporanBukuKasBulanan,
 } from '../types';
 import {
   INITIAL_WARGA_LIST,
@@ -146,11 +147,14 @@ interface AppContextType {
     wargaMenunggakCount: number;
     wargaDepositCount: number;
   };
+  arsipLaporanBulanan: LaporanBukuKasBulanan[];
+  deleteArsipLaporanBulanan: (id: string) => void;
+  resetBukuKasOkt2026: (saldoAwalBaru?: number) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const STORAGE_PREFIX = 'neoport3_v9_';
+const STORAGE_PREFIX = 'neoport3_v10_';
 
 export const getWargaBilledName = (w: Warga): string => {
   if (w.pjKeuangan === 'Nama Pemilik' && w.namaPemilik && w.namaPemilik !== '-') {
@@ -177,21 +181,18 @@ function getInitialTagihan(wargaList: Warga[], dendaRondaEntries?: DendaRondaEnt
     const matchedDenda = dendaRondaEntries?.find(d => d.wargaId === w.id);
     const dendaRondaBulanBerjalan = matchedDenda ? matchedDenda.dendaTotal : 0;
     
-    // Denda bulan agustus yang sudah terposting jadi komponen tagihan
-    const dendaRondaBulanLalu = w.dendaRondaAgustus || 0;
-    const dendaRonda = dendaRondaBulanLalu;
+    // Awal Pembukuan Oktober 2026: Denda = 0
+    const dendaRondaBulanLalu = 0;
+    const dendaRonda = 0;
     const dendaKerjaBakti = 0;
-    const totalDenda = dendaRonda + dendaKerjaBakti;
+    const totalDenda = 0;
 
-    // Sifat deposit dari bulan lalu: peruntukan untuk pembayaran tagihan bulan berjalan (termasuk iuran, denda, dan piutang)
-    let depositDigunakan = 0;
-    const totalKewajibanKotor = totalIuran + totalDenda + piutangBulanLalu;
-    if (depositBulanLalu > 0) {
-      depositDigunakan = Math.min(depositBulanLalu, totalKewajibanKotor);
-    }
-
-    const totalKewajiban = Math.max(0, totalKewajibanKotor - depositDigunakan);
-    const sisaDeposit = depositBulanLalu - depositDigunakan;
+    // Sesuai pembukuan per Oktober 2026:
+    // Total Tagihan = Total Iuran + Tunggakan (piutang bulan lalu)
+    // Piutang yang ada = total tagihan dari tiap-tiap warga (Total Rp 6.609.000)
+    // Warga dengan deposit (Hadi: Rp 13.000, Eva: Rp 650.000) memiliki saldoDeposit yang dapat dialokasikan
+    const totalKewajiban = totalIuran + piutangBulanLalu;
+    const sisaDeposit = depositBulanLalu;
 
     return {
       id: `tag-${w.id}`,
@@ -206,19 +207,19 @@ function getInitialTagihan(wargaList: Warga[], dendaRondaEntries?: DendaRondaEnt
       snack: w.snackRapat,
       jimpitan: w.jimpitan,
       totalIuran: totalIuran,
-      dendaRonda: dendaRonda,
-      dendaRondaBulanLalu: dendaRondaBulanLalu,
+      dendaRonda: 0,
+      dendaRondaBulanLalu: 0,
       dendaRondaBulanBerjalan: dendaRondaBulanBerjalan,
-      dendaKerjaBakti: dendaKerjaBakti,
-      totalDenda: totalDenda,
+      dendaKerjaBakti: 0,
+      totalDenda: 0,
       piutangBulanLalu: piutangBulanLalu,
       titipanBulanLalu: depositBulanLalu,
-      titipanDigunakanUntukTagihan: depositDigunakan,
+      titipanDigunakanUntukTagihan: 0,
       depositBulanLalu: depositBulanLalu,
-      depositDigunakanUntukTagihan: depositDigunakan,
+      depositDigunakanUntukTagihan: 0,
       totalKewajiban: totalKewajiban,
-      jumlahDibayar: totalKewajiban === 0 && depositDigunakan > 0 ? depositDigunakan : 0,
-      statusBayar: sisaDeposit > 0 ? 'Lebih Bayar' : (totalKewajiban === 0 ? 'Lunas' : 'Belum Bayar'),
+      jumlahDibayar: 0,
+      statusBayar: totalKewajiban === 0 ? 'Lunas' : 'Belum Bayar',
       kelebihanBayar: sisaDeposit,
       saldoDeposit: sisaDeposit,
       alokasiKelebihan: sisaDeposit > 0 ? 'pembayaran_tagihan' : undefined,
@@ -430,77 +431,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (saved) {
       try {
         const parsed: TagihanWarga[] = JSON.parse(saved);
-        return parsed.map(tag => {
-          const dendaEntry = initialDenda.find(d => d.wargaId === tag.wargaId);
-          const dendaRondaBulanBerjalan = dendaEntry ? dendaEntry.dendaTotal : (tag.dendaRondaBulanBerjalan || 0);
-          // Tagihan bendahara dan preview warga menagih denda bulan sebelumnya (Agustus = 0)
-          const dendaRondaBulanLalu = tag.dendaRondaBulanLalu ?? 0;
-          const dendaRonda = dendaRondaBulanLalu;
-          const totalDenda = dendaRonda + (tag.dendaKerjaBakti || 0);
-
-          const n = (tag.nama || '').trim().toUpperCase();
-          let titipanBulanLalu = tag.titipanBulanLalu ?? tag.depositBulanLalu ?? 0;
-          let titipanDigunakan = tag.titipanDigunakanUntukTagihan ?? tag.depositDigunakanUntukTagihan ?? 0;
-          let kelebihanBayar = tag.kelebihanBayar ?? tag.saldoDeposit ?? 0;
-          let saldoDeposit = tag.saldoDeposit ?? tag.kelebihanBayar ?? 0;
-          let totalKewajiban = tag.totalKewajiban;
-          let jumlahDibayar = tag.jumlahDibayar;
-          let statusBayar = tag.statusBayar;
-
-          if (n === 'KUSOY') {
-            titipanBulanLalu = 0;
-            titipanDigunakan = 0;
-            kelebihanBayar = 0;
-            saldoDeposit = 0;
-            const piutang = 10000;
-            totalKewajiban = Math.max(0, tag.totalIuran + totalDenda + piutang);
-            statusBayar = jumlahDibayar >= totalKewajiban ? 'Lunas' : (jumlahDibayar > 0 ? 'Kurang Bayar' : 'Belum Bayar');
-          } else if (n === 'EVA' && (tag.blokNo.includes('K') || tag.wargaId === 52)) {
-            titipanBulanLalu = 700000;
-            titipanDigunakan = 50000;
-            kelebihanBayar = 650000;
-            saldoDeposit = 650000;
-            totalKewajiban = 0;
-            jumlahDibayar = 50000;
-            statusBayar = 'Lebih Bayar';
-          } else if (n === 'HADI') {
-            titipanBulanLalu = 63000;
-            titipanDigunakan = 50000;
-            kelebihanBayar = 13000;
-            saldoDeposit = 13000;
-            totalKewajiban = 0;
-            jumlahDibayar = 50000;
-            statusBayar = 'Lebih Bayar';
-          } else {
-            totalKewajiban = Math.max(
-              0,
-              tag.totalIuran + totalDenda + (tag.piutangBulanLalu || 0) - titipanDigunakan
-            );
-            statusBayar =
-              jumlahDibayar >= totalKewajiban
-                ? (kelebihanBayar > 0 || jumlahDibayar > totalKewajiban ? 'Lebih Bayar' : 'Lunas')
-                : jumlahDibayar > 0
-                ? 'Kurang Bayar'
-                : 'Belum Bayar';
-          }
-
-          return {
-            ...tag,
-            dendaRonda,
-            dendaRondaBulanLalu,
-            dendaRondaBulanBerjalan,
-            totalDenda,
-            titipanBulanLalu,
-            depositBulanLalu: titipanBulanLalu,
-            titipanDigunakanUntukTagihan: titipanDigunakan,
-            depositDigunakanUntukTagihan: titipanDigunakan,
-            totalKewajiban,
-            jumlahDibayar,
-            statusBayar: totalKewajiban === 0 && kelebihanBayar === 0 ? 'Lunas' : statusBayar,
-            kelebihanBayar,
-            saldoDeposit,
-          };
-        });
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
       } catch (e) {
         console.error('Error parsing tagihan from localStorage:', e);
       }
@@ -532,6 +465,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem(STORAGE_PREFIX + 'settings');
     return saved ? JSON.parse(saved) : DEFAULT_APP_SETTINGS;
   });
+
+  const [arsipLaporanBulanan, setArsipLaporanBulanan] = useState<LaporanBukuKasBulanan[]>(() => {
+    const saved = localStorage.getItem(STORAGE_PREFIX + 'arsip_laporan');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {
+        console.error('Error parsing arsip laporan:', e);
+      }
+    }
+    return [
+      {
+        id: 'lap-sep-2026',
+        periode: 'September 2026',
+        tanggalClosing: '2026-09-30',
+        saldoAwalKas: 0,
+        totalPemasukan: 0,
+        totalPengeluaran: 0,
+        saldoAkhirKas: 0,
+        totalPiutangWarga: 4629000,
+        totalDepositWarga: 663000,
+        totalHutangRT: 0,
+        wargaMenunggakCount: 21,
+        wargaDepositCount: 2,
+        wargaLunasCount: 33,
+        tagihanSnapshot: [],
+        pemasukanSnapshot: [],
+        pengeluaranSnapshot: [],
+        catatan: 'Laporan Tutup Buku Kas RT.03 Periode September 2026 (Transisi Menuju Awal Pembukuan Baru Oktober 2026)',
+      },
+    ];
+  });
+
+  // Sync to localStorage
+  useEffect(() => {
+    localStorage.setItem(STORAGE_PREFIX + 'arsip_laporan', JSON.stringify(arsipLaporanBulanan));
+  }, [arsipLaporanBulanan]);
+  useEffect(() => {
+    localStorage.setItem(STORAGE_PREFIX + 'active_periode', activePeriode);
+  }, [activePeriode]);
 
   // Sync to localStorage
   useEffect(() => {
@@ -616,6 +590,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       hutangList,
       piutangLainnyaList,
       settings,
+      arsipLaporanBulanan,
+      activePeriode,
     };
 
     const unsubscribe = subscribeToFirestoreSync(
@@ -626,14 +602,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setUsers(remote.users);
         }
         if (remote.wargaList && Array.isArray(remote.wargaList) && remote.wargaList.length > 0) {
-          const patchedWarga = remote.wargaList.map(w => {
-            const n = (w.namaPenghuni || '').trim().toUpperCase();
-            if (n === 'KUSOY') return { ...w, saldoAwalBulanLalu: -10000 };
-            if (n === 'EVA' || w.id === 52) return { ...w, saldoAwalBulanLalu: 700000 };
-            if (n === 'HADI') return { ...w, saldoAwalBulanLalu: 63000 };
-            return w;
-          });
-          setWargaList(patchedWarga);
+          setWargaList(remote.wargaList);
         }
         if (remote.rondaSchedules && Array.isArray(remote.rondaSchedules) && remote.rondaSchedules.length > 0) {
           setRondaSchedules(remote.rondaSchedules);
@@ -657,54 +626,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setKeluhanList(remote.keluhanList);
         }
         if (remote.tagihanList && Array.isArray(remote.tagihanList) && remote.tagihanList.length > 0) {
-          const patchedTags = remote.tagihanList.map(tag => {
-            const n = (tag.nama || '').trim().toUpperCase();
-            if (n === 'KUSOY' && (!tag.alokasiDonasiNominal && !tag.alokasiTagihanMendatangNominal) && tag.kelebihanBayar !== 0) {
-              return {
-                ...tag,
-                titipanBulanLalu: 0,
-                depositBulanLalu: 0,
-                titipanDigunakanUntukTagihan: 0,
-                depositDigunakanUntukTagihan: 0,
-                kelebihanBayar: 0,
-                saldoDeposit: 0,
-                piutangBulanLalu: 10000,
-                totalKewajiban: 60000,
-                jumlahDibayar: 0,
-                statusBayar: 'Belum Bayar',
-              };
-            }
-            if ((n === 'EVA' || tag.wargaId === 52) && (!tag.alokasiDonasiNominal && !tag.alokasiTagihanMendatangNominal) && tag.saldoDeposit !== 650000) {
-              return {
-                ...tag,
-                titipanBulanLalu: 700000,
-                depositBulanLalu: 700000,
-                titipanDigunakanUntukTagihan: 50000,
-                depositDigunakanUntukTagihan: 50000,
-                kelebihanBayar: 650000,
-                saldoDeposit: 650000,
-                totalKewajiban: 0,
-                jumlahDibayar: 50000,
-                statusBayar: 'Lebih Bayar',
-              };
-            }
-            if (n === 'HADI' && (!tag.alokasiDonasiNominal && !tag.alokasiTagihanMendatangNominal) && tag.saldoDeposit !== 13000) {
-              return {
-                ...tag,
-                titipanBulanLalu: 63000,
-                depositBulanLalu: 63000,
-                titipanDigunakanUntukTagihan: 50000,
-                depositDigunakanUntukTagihan: 50000,
-                kelebihanBayar: 13000,
-                saldoDeposit: 13000,
-                totalKewajiban: 0,
-                jumlahDibayar: 50000,
-                statusBayar: 'Lebih Bayar',
-              };
-            }
-            return tag;
-          });
-          setTagihanList(patchedTags);
+          setTagihanList(remote.tagihanList);
         }
         if (remote.pengeluaranList && Array.isArray(remote.pengeluaranList)) {
           setPengeluaranList(remote.pengeluaranList);
@@ -717,6 +639,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         if (remote.piutangLainnyaList && Array.isArray(remote.piutangLainnyaList)) {
           setPiutangLainnyaList(remote.piutangLainnyaList);
+        }
+        if (remote.arsipLaporanBulanan && Array.isArray(remote.arsipLaporanBulanan)) {
+          setArsipLaporanBulanan(remote.arsipLaporanBulanan);
+        }
+        if (remote.activePeriode && typeof remote.activePeriode === 'string') {
+          setActivePeriode(remote.activePeriode);
         }
         if (remote.settings && typeof remote.settings === 'object' && remote.settings.posRondaRadiusMeters !== undefined) {
           setSettings(remote.settings);
@@ -758,6 +686,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         hutangList,
         piutangLainnyaList,
         settings,
+        arsipLaporanBulanan,
+        activePeriode,
       },
       currentUser ? `${currentUser.role} (${currentUser.name})` : 'Aplikasi RT.03'
     );
@@ -777,6 +707,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     hutangList,
     piutangLainnyaList,
     settings,
+    arsipLaporanBulanan,
+    activePeriode,
   ]);
 
   const forceSyncToCloud = async (): Promise<boolean> => {
@@ -798,6 +730,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         hutangList,
         piutangLainnyaList,
         settings,
+        arsipLaporanBulanan,
+        activePeriode,
       },
       currentUser ? `${currentUser.role} (${currentUser.name}) - Manual Sync` : 'Sinkronisasi Manual'
     );
@@ -2073,10 +2007,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const periodeLama = activePeriode;
     const cleanNamaPeriode = namaPeriodeBaru.trim() || 'Oktober 2026';
 
+    const saldoAwal = settings.saldoAwalKas || 0;
     const totalPemasukan = pemasukanList.reduce((acc, curr) => acc + curr.nominal, 0);
     const totalPengeluaran = pengeluaranList.reduce((acc, curr) => acc + curr.nominal, 0);
-    const saldoAwal = 0;
-    const saldoAkhirKas = totalPemasukan - totalPengeluaran;
+    const saldoAkhirKas = saldoAwal + totalPemasukan - totalPengeluaran;
 
     let totalPiutangAkumulasi = 0;
     let totalDepositAkumulasi = 0;
@@ -2100,6 +2034,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } else {
         newSaldoMap.set(t.wargaId, 0);
       }
+    });
+
+    // Simpan snapshot laporan bulanan yang ditutup ke arsip
+    const laporanArsipBaru: LaporanBukuKasBulanan = {
+      id: `lap-${Date.now()}`,
+      periode: periodeLama,
+      tanggalClosing: new Date().toISOString().slice(0, 10),
+      saldoAwalKas: saldoAwal,
+      totalPemasukan,
+      totalPengeluaran,
+      saldoAkhirKas,
+      totalPiutangWarga: totalPiutangAkumulasi,
+      totalDepositWarga: totalDepositAkumulasi,
+      totalHutangRT: hutangList.reduce((acc, curr) => acc + (curr.sisaHutang || 0), 0),
+      wargaMenunggakCount,
+      wargaDepositCount,
+      wargaLunasCount: Math.max(0, tagihanList.length - wargaMenunggakCount - wargaDepositCount),
+      tagihanSnapshot: [...tagihanList],
+      pemasukanSnapshot: [...pemasukanList],
+      pengeluaranSnapshot: [...pengeluaranList],
+      catatan: `Laporan Tutup Buku Kas RT.03 Periode ${periodeLama}`,
+    };
+
+    setArsipLaporanBulanan((prev) => {
+      const filtered = prev.filter((p) => p.periode !== periodeLama);
+      const updated = [laporanArsipBaru, ...filtered];
+      localStorage.setItem(STORAGE_PREFIX + 'arsip_laporan', JSON.stringify(updated));
+      return updated;
     });
 
     const updatedWargaList = wargaList.map((w) => {
@@ -2170,19 +2132,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActivePeriode(cleanNamaPeriode);
     localStorage.setItem(STORAGE_PREFIX + 'active_periode', cleanNamaPeriode);
 
-    const openingEntry: PemasukanKas = {
-      id: `inc-closing-${Date.now()}`,
-      tanggal: new Date().toISOString().slice(0, 10),
-      kategori: 'Lainnya',
-      namaSumber: `Saldo Awal Kas (${periodeLama})`,
-      nominal: saldoAkhirKas,
-      keterangan: `Pindahan Saldo Akhir Kas Riil Periode ${periodeLama} ke Periode Baru ${cleanNamaPeriode}`,
-    };
-    setPemasukanList((prev) => {
-      const updated = [openingEntry, ...prev];
-      localStorage.setItem(STORAGE_PREFIX + 'pemasukan', JSON.stringify(updated));
+    // Update Saldo Awal di Settings untuk periode baru
+    setSettings((prev) => {
+      const updated = { ...prev, saldoAwalKas: saldoAkhirKas };
+      localStorage.setItem(STORAGE_PREFIX + 'settings', JSON.stringify(updated));
       return updated;
     });
+
+    // Reset pemasukan & pengeluaran untuk periode kas bulanan baru
+    setPemasukanList([]);
+    localStorage.setItem(STORAGE_PREFIX + 'pemasukan', JSON.stringify([]));
+    setPengeluaranList([]);
+    localStorage.setItem(STORAGE_PREFIX + 'pengeluaran', JSON.stringify([]));
 
     return {
       periodeLama,
@@ -2196,6 +2157,52 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       wargaMenunggakCount,
       wargaDepositCount,
     };
+  };
+
+  const deleteArsipLaporanBulanan = (id: string) => {
+    setArsipLaporanBulanan((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      localStorage.setItem(STORAGE_PREFIX + 'arsip_laporan', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const resetBukuKasOkt2026 = (saldoAwalBaru: number = 0) => {
+    setSettings((prev) => {
+      const updated = {
+        ...prev,
+        saldoAwalKas: saldoAwalBaru,
+        periodeAwalPembukuan: 'Oktober 2026',
+      };
+      localStorage.setItem(STORAGE_PREFIX + 'settings', JSON.stringify(updated));
+      return updated;
+    });
+
+    setActivePeriode('Oktober 2026');
+    localStorage.setItem(STORAGE_PREFIX + 'active_periode', 'Oktober 2026');
+
+    setPengeluaranList([]);
+    localStorage.setItem(STORAGE_PREFIX + 'pengeluaran', JSON.stringify([]));
+
+    setPemasukanList([]);
+    localStorage.setItem(STORAGE_PREFIX + 'pemasukan', JSON.stringify([]));
+
+    setHutangList([]);
+    localStorage.setItem(STORAGE_PREFIX + 'hutang', JSON.stringify([]));
+
+    setPiutangLainnyaList([]);
+    localStorage.setItem(STORAGE_PREFIX + 'piutangLainnya', JSON.stringify([]));
+
+    const initialDenda = getInitialDendaRonda(INITIAL_WARGA_LIST);
+    setDendaRondaList(initialDenda);
+    localStorage.setItem(STORAGE_PREFIX + 'dendaRonda', JSON.stringify(initialDenda));
+
+    setWargaList(INITIAL_WARGA_LIST);
+    localStorage.setItem(STORAGE_PREFIX + 'warga', JSON.stringify(INITIAL_WARGA_LIST));
+
+    const initialTags = getInitialTagihan(INITIAL_WARGA_LIST, initialDenda);
+    setTagihanList(initialTags);
+    localStorage.setItem(STORAGE_PREFIX + 'tagihan', JSON.stringify(initialTags));
   };
 
   const updateSettings = (newSettings: Partial<AppSettings>) => {
@@ -2325,6 +2332,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setActivePeriode,
         updateKomponenIuranWarga,
         closingBulanKas,
+        arsipLaporanBulanan,
+        deleteArsipLaporanBulanan,
+        resetBukuKasOkt2026,
       }}
     >
       {children}

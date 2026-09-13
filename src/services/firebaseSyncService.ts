@@ -22,6 +22,7 @@ import {
   PiutangWargaLainnya,
   AppSettings,
   UserAccount,
+  LaporanBukuKasBulanan,
 } from '../types';
 
 export interface SyncData {
@@ -39,6 +40,8 @@ export interface SyncData {
   pemasukanList?: PemasukanKas[];
   hutangList?: HutangRT[];
   piutangLainnyaList?: PiutangWargaLainnya[];
+  arsipLaporanBulanan?: LaporanBukuKasBulanan[];
+  activePeriode?: string;
   settings?: AppSettings;
   version?: number;
   lastUpdated?: string;
@@ -54,7 +57,7 @@ export interface SyncStatus {
 }
 
 const SYNC_DOC_PATH = 'sync_metadata';
-const SYNC_DOC_ID = 'rt03_master_v7';
+const SYNC_DOC_ID = 'rt03_master_okt2026';
 
 let isInternalUpdate = false;
 let syncDebounceTimer: ReturnType<typeof setTimeout> | null = null;

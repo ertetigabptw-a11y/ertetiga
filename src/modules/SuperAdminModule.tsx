@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Role } from '../types';
 import {
@@ -20,6 +20,10 @@ import {
   Radio,
   Cloud,
   RefreshCw,
+  Wallet,
+  BookOpen,
+  DollarSign,
+  Calculator,
 } from 'lucide-react';
 
 interface SuperAdminModuleProps {
@@ -38,6 +42,12 @@ export const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ activeTab })
     wargaList,
     syncStatus,
     forceSyncToCloud,
+    tagihanList,
+    pemasukanList,
+    pengeluaranList,
+    hutangList,
+    resetBukuKasOkt2026,
+    activePeriode,
   } = useApp();
 
   // Settings form state
@@ -51,6 +61,39 @@ export const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ activeTab })
   const [bypassRadius, setBypassRadius] = useState(settings.bypassRadiusCheck);
   const [bypassJam, setBypassJam] = useState(settings.bypassJamCheck);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Saldo Awal & Pembukuan Kas State
+  const [saldoAwalInput, setSaldoAwalInput] = useState<number>(settings.saldoAwalKas || 0);
+  const [showConfirmInitModal, setShowConfirmInitModal] = useState(false);
+  const [initSuccessMsg, setInitSuccessMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSaldoAwalInput(settings.saldoAwalKas || 0);
+  }, [settings.saldoAwalKas]);
+
+  // Financial calculations
+  const totalPemasukan = (pemasukanList || []).reduce((acc, curr) => acc + (curr.nominal || 0), 0);
+  const totalPengeluaran = (pengeluaranList || []).reduce((acc, curr) => acc + (curr.nominal || 0), 0);
+  const totalHutangRT = (hutangList || []).reduce((acc, curr) => acc + (curr.sisaHutang || 0), 0);
+  const totalPiutangTagihanWarga = (tagihanList || []).reduce((acc, curr) => {
+    const sisa = (curr.totalKewajiban || 0) - (curr.jumlahDibayar || 0);
+    return acc + (sisa > 0 ? sisa : 0);
+  }, 0);
+  const totalDepositWarga = (tagihanList || []).reduce((acc, curr) => acc + (curr.saldoDeposit ?? curr.kelebihanBayar ?? 0), 0);
+  const saldoKasSaatIni = (settings.saldoAwalKas || 0) + totalPemasukan - totalPengeluaran;
+
+  const handleSaveSaldoAwal = () => {
+    updateSettings({ saldoAwalKas: Number(saldoAwalInput) || 0 });
+    setInitSuccessMsg(`Saldo awal kas berhasil diperbarui menjadi Rp ${(Number(saldoAwalInput) || 0).toLocaleString('id-ID')}`);
+    setTimeout(() => setInitSuccessMsg(null), 3500);
+  };
+
+  const handleExecuteInitOktober2026 = () => {
+    resetBukuKasOkt2026(Number(saldoAwalInput) || 0);
+    setShowConfirmInitModal(false);
+    setInitSuccessMsg('Buku kas periode Oktober 2026 berhasil diinisialisasi! Saldo awal sesuai input, pengeluaran 0, pemasukan 0, hutang 0, piutang warga tercatat.');
+    setTimeout(() => setInitSuccessMsg(null), 4500);
+  };
 
   // User edit state
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
@@ -213,6 +256,124 @@ export const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ activeTab })
       {/* Tab: Settings System & Integration */}
       {(activeTab === 'settings' || activeTab === 'preview_all') && (
         <div className="space-y-4">
+          {/* Card: Manajemen Saldo Awal & Pembukuan Kas RT (Oktober 2026) */}
+          <div className="p-4 rounded-2xl bg-slate-800/90 border border-slate-700 space-y-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-700/70 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-emerald-950/80 border border-emerald-500/40 text-emerald-400">
+                  <BookOpen className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Inisialisasi Pembukuan Kas RT (Periode Awal: Oktober 2026)</h3>
+                  <p className="text-[11px] text-slate-400">
+                    Sistem pembukuan kas bulanan tertib: Saldo awal diisi Super Admin, pengeluaran 0, pemasukan 0, hutang 0, piutang tagihan warga tercatat riil.
+                  </p>
+                </div>
+              </div>
+              <span className="text-[11px] px-2.5 py-1 rounded-full font-bold bg-purple-950/80 border border-purple-500/40 text-purple-300 w-fit">
+                Periode Aktif: {activePeriode}
+              </span>
+            </div>
+
+            {initSuccessMsg && (
+              <div className="p-3 rounded-xl bg-emerald-950/70 border border-emerald-500/50 text-emerald-300 text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                <span>{initSuccessMsg}</span>
+              </div>
+            )}
+
+            {/* Status Ringkasan Kas & Pembukuan Awal */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+              <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-700/80">
+                <span className="text-[10px] text-slate-400 font-semibold block uppercase">Saldo Awal</span>
+                <p className="text-xs sm:text-sm font-black text-amber-300 font-mono mt-0.5 truncate">
+                  Rp {(settings.saldoAwalKas || 0).toLocaleString('id-ID')}
+                </p>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-700/80">
+                <span className="text-[10px] text-slate-400 font-semibold block uppercase">Pemasukan</span>
+                <p className="text-xs sm:text-sm font-black text-emerald-400 font-mono mt-0.5 truncate">
+                  Rp {totalPemasukan.toLocaleString('id-ID')}
+                </p>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-700/80">
+                <span className="text-[10px] text-slate-400 font-semibold block uppercase">Pengeluaran</span>
+                <p className="text-xs sm:text-sm font-black text-rose-400 font-mono mt-0.5 truncate">
+                  Rp {totalPengeluaran.toLocaleString('id-ID')}
+                </p>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-700/80">
+                <span className="text-[10px] text-slate-400 font-semibold block uppercase">Saldo Kas Riil</span>
+                <p className="text-xs sm:text-sm font-black text-sky-400 font-mono mt-0.5 truncate">
+                  Rp {saldoKasSaatIni.toLocaleString('id-ID')}
+                </p>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-700/80">
+                <span className="text-[10px] text-slate-400 font-semibold block uppercase">Piutang Warga</span>
+                <p className="text-xs sm:text-sm font-black text-amber-400 font-mono mt-0.5 truncate">
+                  Rp {totalPiutangTagihanWarga.toLocaleString('id-ID')}
+                </p>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-700/80">
+                <span className="text-[10px] text-slate-400 font-semibold block uppercase">Hutang RT</span>
+                <p className="text-xs sm:text-sm font-black text-rose-300 font-mono mt-0.5 truncate">
+                  Rp {totalHutangRT.toLocaleString('id-ID')}
+                </p>
+              </div>
+            </div>
+
+            {/* Form Input Saldo Awal Kas RT */}
+            <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-700/80 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                <div className="flex-1 max-w-sm">
+                  <label className="text-xs font-bold text-white block mb-1 flex items-center gap-1.5">
+                    <Wallet className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Saldo Awal Kas RT (Super Admin):</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-xs text-slate-400 font-mono font-bold">Rp</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={saldoAwalInput}
+                      onChange={(e) => setSaldoAwalInput(Number(e.target.value) || 0)}
+                      placeholder="0"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Bisa diisi 0 atau nominal tertentu sesuai kas fisik/rekening RT saat ini.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSaveSaldoAwal}
+                    className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold flex items-center gap-1.5 transition active:scale-95"
+                  >
+                    <Save className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Simpan Saldo Awal Saja</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmInitModal(true)}
+                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-950 transition active:scale-95"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Inisialisasi Buku Kas Oktober 2026</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <form onSubmit={handleSaveSettings} className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-700/60 pb-2">
               <div className="flex items-center gap-2">
@@ -667,6 +828,66 @@ export const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ activeTab })
               <Send className="w-4 h-4" />
               <span>{sending ? 'Mengirim ke Gateway...' : 'Kirim Pesan WhatsApp Sekarang'}</span>
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal: Inisialisasi Buku Kas Oktober 2026 */}
+      {showConfirmInitModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-5 space-y-4 shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="flex items-center gap-2.5 text-amber-400 border-b border-slate-800 pb-3">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <h3 className="text-sm font-bold text-white">Konfirmasi Inisialisasi Buku Kas (Oktober 2026)</h3>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Anda akan mengesahkan <strong className="text-emerald-400 font-semibold">Oktober 2026</strong> sebagai awal pembukuan resmi bulanan RT.03 dengan parameter:
+            </p>
+
+            <div className="space-y-1.5 p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-xs font-mono">
+              <div className="flex justify-between text-slate-300">
+                <span className="text-slate-400 font-sans">Saldo Awal Kas:</span>
+                <span className="font-bold text-amber-300">Rp {(Number(saldoAwalInput) || 0).toLocaleString('id-ID')}</span>
+              </div>
+              <div className="flex justify-between text-slate-300">
+                <span className="text-slate-400 font-sans">Pengeluaran Kas:</span>
+                <span className="font-bold text-rose-300">Rp 0</span>
+              </div>
+              <div className="flex justify-between text-slate-300">
+                <span className="text-slate-400 font-sans">Pemasukan Kas:</span>
+                <span className="font-bold text-emerald-300">Rp 0</span>
+              </div>
+              <div className="flex justify-between text-slate-300">
+                <span className="text-slate-400 font-sans">Hutang RT:</span>
+                <span className="font-bold text-slate-400">Rp 0</span>
+              </div>
+              <div className="flex justify-between text-slate-300">
+                <span className="text-slate-400 font-sans">Piutang Kas RT (Tagihan Warga):</span>
+                <span className="font-bold text-sky-300">Total Tagihan Warga</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-400">
+              Data tagihan tiap warga akan disinkronkan ke cloud secara otomatis dan modul Bendahara dapat mengakses laporan arsip bulan-bulan sebelumnya.
+            </p>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowConfirmInitModal(false)}
+                className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteInitOktober2026}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-950 transition"
+              >
+                Ya, Inisialisasi Sekarang
+              </button>
+            </div>
           </div>
         </div>
       )}

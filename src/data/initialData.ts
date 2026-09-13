@@ -11,6 +11,8 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   jamMulaiRonda: '22:00',
   jamSelesaiRonda: '23:59',
   tarifKerjaBaktiDenda: 25000,
+  saldoAwalKas: 0,
+  periodeAwalPembukuan: 'Oktober 2026',
 };
 
 const RAW_WARGA_LIST: Warga[] = [
@@ -42,7 +44,7 @@ const RAW_WARGA_LIST: Warga[] = [
     jimpitan: 15000,
     totalIuran: 50000,
     saldoAwalBulanLalu: -175000,
-    dendaRondaAgustus: 5000,
+    dendaRondaAgustus: 0,
   },
   {
     id: 2,
@@ -134,7 +136,7 @@ const RAW_WARGA_LIST: Warga[] = [
     jimpitan: 15000,
     totalIuran: 50000,
     saldoAwalBulanLalu: 0,
-    dendaRondaAgustus: 50000,
+    dendaRondaAgustus: 0,
   },
   {
     id: 5,
@@ -284,7 +286,7 @@ const RAW_WARGA_LIST: Warga[] = [
     jimpitan: 15000,
     totalIuran: 50000,
     saldoAwalBulanLalu: -55000,
-    dendaRondaAgustus: 5000,
+    dendaRondaAgustus: 0,
   },
   {
     id: 10,
@@ -347,7 +349,7 @@ const RAW_WARGA_LIST: Warga[] = [
     jimpitan: 15000,
     totalIuran: 50000,
     saldoAwalBulanLalu: -685000,
-    dendaRondaAgustus: 50000,
+    dendaRondaAgustus: 0,
   },
   {
     id: 12,
@@ -378,7 +380,7 @@ const RAW_WARGA_LIST: Warga[] = [
     jimpitan: 15000,
     totalIuran: 50000,
     saldoAwalBulanLalu: -225000,
-    dendaRondaAgustus: 50000,
+    dendaRondaAgustus: 0,
   },
   {
     id: 13,
@@ -529,7 +531,7 @@ const RAW_WARGA_LIST: Warga[] = [
     jimpitan: 15000,
     totalIuran: 50000,
     saldoAwalBulanLalu: 0,
-    dendaRondaAgustus: 10000,
+    dendaRondaAgustus: 0,
   },
   {
     id: 18,
@@ -874,7 +876,7 @@ const RAW_WARGA_LIST: Warga[] = [
     jimpitan: 15000,
     totalIuran: 50000,
     saldoAwalBulanLalu: -140000,
-    dendaRondaAgustus: 25000,
+    dendaRondaAgustus: 0,
   },
   {
     id: 29,
@@ -1211,7 +1213,7 @@ const RAW_WARGA_LIST: Warga[] = [
     jimpitan: 15000,
     totalIuran: 50000,
     saldoAwalBulanLalu: 0,
-    dendaRondaAgustus: 25000,
+    dendaRondaAgustus: 0,
   },
   {
     id: 40,
@@ -1240,7 +1242,7 @@ const RAW_WARGA_LIST: Warga[] = [
     jimpitan: 0,
     totalIuran: 32000,
     saldoAwalBulanLalu: -357000,
-    dendaRondaAgustus: 25000,
+    dendaRondaAgustus: 0,
   },
   {
     id: 41,
@@ -1272,7 +1274,7 @@ const RAW_WARGA_LIST: Warga[] = [
     jimpitan: 15000,
     totalIuran: 50000,
     saldoAwalBulanLalu: -65000,
-    dendaRondaAgustus: 15000,
+    dendaRondaAgustus: 0,
   },
   {
     id: 42,
@@ -1303,7 +1305,7 @@ const RAW_WARGA_LIST: Warga[] = [
     jimpitan: 15000,
     totalIuran: 50000,
     saldoAwalBulanLalu: -100000,
-    dendaRondaAgustus: 50000,
+    dendaRondaAgustus: 0,
   },
   {
     id: 43,
@@ -1487,7 +1489,7 @@ const RAW_WARGA_LIST: Warga[] = [
     jimpitan: 0,
     totalIuran: 32000,
     saldoAwalBulanLalu: -130000,
-    dendaRondaAgustus: 15000,
+    dendaRondaAgustus: 0,
   },
   {
     id: 49,
@@ -1642,7 +1644,7 @@ const RAW_WARGA_LIST: Warga[] = [
     jimpitan: 15000,
     totalIuran: 50000,
     saldoAwalBulanLalu: -515000,
-    dendaRondaAgustus: 25000,
+    dendaRondaAgustus: 0,
   },
   {
     id: 54,
@@ -1671,7 +1673,7 @@ const RAW_WARGA_LIST: Warga[] = [
     jimpitan: 15000,
     totalIuran: 50000,
     saldoAwalBulanLalu: -155000,
-    dendaRondaAgustus: 15000,
+    dendaRondaAgustus: 0,
   },
   {
     id: 55,

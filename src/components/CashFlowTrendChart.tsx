@@ -159,48 +159,48 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
     if (active && payload && payload.length) {
       const dataPoint = payload[0].payload;
       return (
-        <div className="p-3 bg-slate-950 border border-slate-700 rounded-xl shadow-2xl text-xs space-y-1.5 min-w-[190px] z-50">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-1">
-            <span className="font-bold text-white flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+        <div className="p-3 bg-white border border-slate-200 rounded-xl shadow-xl text-xs space-y-1.5 min-w-[200px] z-50">
+          <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
+            <span className="font-bold text-slate-900 flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-emerald-600" />
               {dataPoint.namaLengkap}
             </span>
             {dataPoint.isCurrent && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 font-bold border border-emerald-500/40">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">
                 Aktif
               </span>
             )}
           </div>
 
           <div className="space-y-1 pt-0.5">
-            <div className="flex items-center justify-between text-emerald-400">
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+            <div className="flex items-center justify-between text-emerald-700">
+              <span className="flex items-center gap-1 font-semibold">
+                <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block" />
                 Kas Masuk:
               </span>
               <span className="font-mono font-bold">{formatRupiah(dataPoint.kasMasuk)}</span>
             </div>
 
             {includeIuran && dataPoint.iuranPayments > 0 && (
-              <div className="pl-3 text-[10px] text-slate-400 flex justify-between">
+              <div className="pl-3 text-[10px] text-slate-600 flex justify-between">
                 <span>• Iuran Warga:</span>
-                <span className="font-mono">{formatRupiah(dataPoint.iuranPayments)}</span>
+                <span className="font-mono font-medium">{formatRupiah(dataPoint.iuranPayments)}</span>
               </div>
             )}
 
-            <div className="flex items-center justify-between text-rose-400">
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />
+            <div className="flex items-center justify-between text-rose-700">
+              <span className="flex items-center gap-1 font-semibold">
+                <span className="w-2 h-2 rounded-full bg-rose-600 inline-block" />
                 Kas Keluar:
               </span>
               <span className="font-mono font-bold">-{formatRupiah(dataPoint.kasKeluar)}</span>
             </div>
 
-            <div className="border-t border-slate-800 pt-1 flex items-center justify-between">
-              <span className="text-slate-300 font-semibold">Surplus / Defisit:</span>
+            <div className="border-t border-slate-200 pt-1 flex items-center justify-between">
+              <span className="text-slate-700 font-semibold">Surplus / Defisit:</span>
               <span
                 className={`font-mono font-bold ${
-                  dataPoint.netSurplus >= 0 ? 'text-emerald-300' : 'text-rose-400'
+                  dataPoint.netSurplus >= 0 ? 'text-emerald-700' : 'text-rose-700'
                 }`}
               >
                 {dataPoint.netSurplus >= 0 ? '+' : ''}
@@ -208,7 +208,7 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
               </span>
             </div>
 
-            <div className="flex items-center justify-between text-[11px] text-teal-300 font-semibold pt-0.5">
+            <div className="flex items-center justify-between text-[11px] text-teal-700 font-bold pt-0.5">
               <span>Saldo Kumulatif:</span>
               <span className="font-mono font-bold">{formatRupiah(dataPoint.saldoKumulatif)}</span>
             </div>
@@ -220,20 +220,20 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
   };
 
   return (
-    <div className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 shadow-lg text-xs">
+    <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 space-y-4 shadow-sm text-xs">
       {/* Header & Title Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
         <div>
-          <div className="flex items-center gap-2 text-emerald-400 mb-0.5">
+          <div className="flex items-center gap-2 text-emerald-700 mb-0.5">
             <TrendingUp className="w-4 h-4" />
             <span className="text-[11px] font-bold uppercase tracking-wider">
               Visualisasi Arus Kas Bulanan
             </span>
           </div>
-          <h3 className="text-base font-extrabold text-white">
+          <h3 className="text-base font-extrabold text-slate-900">
             Tren Arus Kas Masuk & Keluar RT.03 ({year})
           </h3>
-          <p className="text-[11px] text-slate-400 mt-0.5">
+          <p className="text-[11px] text-slate-600 mt-0.5">
             Breakdown bulanan realisasi pemasukan kas, iuran warga, dan pengeluaran operasional SOP RT.
           </p>
         </div>
@@ -241,14 +241,14 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
         {/* Controls: Chart Type, Range & Include Iuran */}
         <div className="flex items-center gap-1.5 flex-wrap">
           {/* Chart Type Toggle */}
-          <div className="flex items-center p-1 rounded-xl bg-slate-950 border border-slate-800">
+          <div className="flex items-center p-1 rounded-xl bg-slate-100 border border-slate-200">
             <button
               type="button"
               onClick={() => setChartType('bar')}
               className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition ${
                 chartType === 'bar'
                   ? 'bg-emerald-600 text-white shadow'
-                  : 'text-slate-400 hover:text-white'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
               title="Grafik Batang Komparasi Masuk vs Keluar"
             >
@@ -261,7 +261,7 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
               className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition ${
                 chartType === 'area'
                   ? 'bg-emerald-600 text-white shadow'
-                  : 'text-slate-400 hover:text-white'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
               title="Grafik Area Tren Kas"
             >
@@ -274,7 +274,7 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
               className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition ${
                 chartType === 'line'
                   ? 'bg-emerald-600 text-white shadow'
-                  : 'text-slate-400 hover:text-white'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
               title="Grafik Garis Saldo Kumulatif"
             >
@@ -287,7 +287,7 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value as any)}
-            className="bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs text-white font-medium focus:outline-none focus:border-emerald-500"
+            className="bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 font-medium focus:outline-none focus:border-emerald-600"
           >
             <option value="all">12 Bulan ({year})</option>
             <option value="semester2">Semester II (Jul-Des)</option>
@@ -300,8 +300,8 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
             onClick={() => setIncludeIuran(!includeIuran)}
             className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition ${
               includeIuran
-                ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'
-                : 'bg-slate-950 border-slate-800 text-slate-400'
+                ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
+                : 'bg-slate-100 border-slate-200 text-slate-600'
             }`}
             title="Sertakan realisasi pembayaran iuran warga ke dalam arus kas masuk"
           >
@@ -313,40 +313,40 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
 
       {/* KPI Cards Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 mb-0.5">
+        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+          <div className="flex items-center justify-between text-slate-600 mb-0.5">
             <span className="text-[10px] uppercase font-bold">Total Masuk</span>
-            <ArrowDownRight className="w-3.5 h-3.5 text-emerald-400" />
+            <ArrowDownRight className="w-3.5 h-3.5 text-emerald-600" />
           </div>
-          <p className="font-mono font-bold text-sm text-emerald-400 truncate">
+          <p className="font-mono font-bold text-sm text-emerald-700 truncate">
             {formatRupiah(totalMasukPeriode)}
           </p>
           <span className="text-[9px] text-slate-500 block">Rata2: {formatRupiah(avgMasuk)}/bln</span>
         </div>
 
-        <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 mb-0.5">
+        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+          <div className="flex items-center justify-between text-slate-600 mb-0.5">
             <span className="text-[10px] uppercase font-bold">Total Keluar</span>
-            <ArrowUpRight className="w-3.5 h-3.5 text-rose-400" />
+            <ArrowUpRight className="w-3.5 h-3.5 text-rose-600" />
           </div>
-          <p className="font-mono font-bold text-sm text-rose-400 truncate">
+          <p className="font-mono font-bold text-sm text-rose-700 truncate">
             {formatRupiah(totalKeluarPeriode)}
           </p>
           <span className="text-[9px] text-slate-500 block">Rata2: {formatRupiah(avgKeluar)}/bln</span>
         </div>
 
-        <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 mb-0.5">
+        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+          <div className="flex items-center justify-between text-slate-600 mb-0.5">
             <span className="text-[10px] uppercase font-bold">Surplus / Defisit</span>
             {netSurplusPeriode >= 0 ? (
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
             ) : (
-              <TrendingDown className="w-3.5 h-3.5 text-rose-400" />
+              <TrendingDown className="w-3.5 h-3.5 text-rose-600" />
             )}
           </div>
           <p
             className={`font-mono font-bold text-sm truncate ${
-              netSurplusPeriode >= 0 ? 'text-emerald-300' : 'text-rose-400'
+              netSurplusPeriode >= 0 ? 'text-emerald-700' : 'text-rose-700'
             }`}
           >
             {netSurplusPeriode >= 0 ? '+' : ''}
@@ -357,12 +357,12 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
           </span>
         </div>
 
-        <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 mb-0.5">
+        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+          <div className="flex items-center justify-between text-slate-600 mb-0.5">
             <span className="text-[10px] uppercase font-bold">Puncak Surplus</span>
-            <Wallet className="w-3.5 h-3.5 text-teal-400" />
+            <Wallet className="w-3.5 h-3.5 text-teal-600" />
           </div>
-          <p className="font-mono font-bold text-sm text-teal-300 truncate">
+          <p className="font-mono font-bold text-sm text-teal-700 truncate">
             {bestMonth && bestMonth.netSurplus > 0 ? bestMonth.bulan : '-'}
           </p>
           <span className="text-[9px] text-slate-500 block truncate">
@@ -374,21 +374,21 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
       </div>
 
       {/* Main Chart Canvas */}
-      <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800/80">
+      <div className="p-3 rounded-2xl bg-white border border-slate-200">
         <div className="h-64 sm:h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
             {chartType === 'bar' ? (
               <BarChart data={filteredData} margin={{ top: 15, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                 <XAxis
                   dataKey="bulan"
-                  stroke="#64748b"
-                  tick={{ fill: '#94a3b8', fontSize: 11 }}
+                  stroke="#94a3b8"
+                  tick={{ fill: '#475569', fontSize: 11 }}
                   tickLine={false}
                 />
                 <YAxis
-                  stroke="#64748b"
-                  tick={{ fill: '#94a3b8', fontSize: 10 }}
+                  stroke="#94a3b8"
+                  tick={{ fill: '#475569', fontSize: 10 }}
                   tickLine={false}
                   tickFormatter={(val) => `${val / 1000}k`}
                 />
@@ -397,19 +397,19 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
                   verticalAlign="top"
                   align="right"
                   iconSize={8}
-                  wrapperStyle={{ paddingBottom: '10px', fontSize: '11px' }}
+                  wrapperStyle={{ paddingBottom: '10px', fontSize: '11px', color: '#334155' }}
                 />
                 <Bar
                   dataKey="kasMasuk"
                   name="Kas Masuk"
-                  fill="#10b981"
+                  fill="#059669"
                   radius={[4, 4, 0, 0]}
                   maxBarSize={32}
                 />
                 <Bar
                   dataKey="kasKeluar"
                   name="Kas Keluar"
-                  fill="#f43f5e"
+                  fill="#e11d48"
                   radius={[4, 4, 0, 0]}
                   maxBarSize={32}
                 />
@@ -418,24 +418,24 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
               <AreaChart data={filteredData} margin={{ top: 15, right: 10, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorMasuk" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#059669" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#059669" stopOpacity={0.0} />
                   </linearGradient>
                   <linearGradient id="colorKeluar" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#e11d48" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#e11d48" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                 <XAxis
                   dataKey="bulan"
-                  stroke="#64748b"
-                  tick={{ fill: '#94a3b8', fontSize: 11 }}
+                  stroke="#94a3b8"
+                  tick={{ fill: '#475569', fontSize: 11 }}
                   tickLine={false}
                 />
                 <YAxis
-                  stroke="#64748b"
-                  tick={{ fill: '#94a3b8', fontSize: 10 }}
+                  stroke="#94a3b8"
+                  tick={{ fill: '#475569', fontSize: 10 }}
                   tickLine={false}
                   tickFormatter={(val) => `${val / 1000}k`}
                 />
@@ -444,13 +444,13 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
                   verticalAlign="top"
                   align="right"
                   iconSize={8}
-                  wrapperStyle={{ paddingBottom: '10px', fontSize: '11px' }}
+                  wrapperStyle={{ paddingBottom: '10px', fontSize: '11px', color: '#334155' }}
                 />
                 <Area
                   type="monotone"
                   dataKey="kasMasuk"
                   name="Kas Masuk"
-                  stroke="#10b981"
+                  stroke="#059669"
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#colorMasuk)"
@@ -459,7 +459,7 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
                   type="monotone"
                   dataKey="kasKeluar"
                   name="Kas Keluar"
-                  stroke="#f43f5e"
+                  stroke="#e11d48"
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#colorKeluar)"
@@ -467,16 +467,16 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
               </AreaChart>
             ) : (
               <LineChart data={filteredData} margin={{ top: 15, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                 <XAxis
                   dataKey="bulan"
-                  stroke="#64748b"
-                  tick={{ fill: '#94a3b8', fontSize: 11 }}
+                  stroke="#94a3b8"
+                  tick={{ fill: '#475569', fontSize: 11 }}
                   tickLine={false}
                 />
                 <YAxis
-                  stroke="#64748b"
-                  tick={{ fill: '#94a3b8', fontSize: 10 }}
+                  stroke="#94a3b8"
+                  tick={{ fill: '#475569', fontSize: 10 }}
                   tickLine={false}
                   tickFormatter={(val) => `${val / 1000}k`}
                 />
@@ -485,34 +485,34 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
                   verticalAlign="top"
                   align="right"
                   iconSize={8}
-                  wrapperStyle={{ paddingBottom: '10px', fontSize: '11px' }}
+                  wrapperStyle={{ paddingBottom: '10px', fontSize: '11px', color: '#334155' }}
                 />
                 <Line
                   type="monotone"
                   dataKey="kasMasuk"
                   name="Kas Masuk"
-                  stroke="#10b981"
+                  stroke="#059669"
                   strokeWidth={2.5}
-                  dot={{ r: 3, fill: '#10b981' }}
+                  dot={{ r: 3, fill: '#059669' }}
                   activeDot={{ r: 5 }}
                 />
                 <Line
                   type="monotone"
                   dataKey="kasKeluar"
                   name="Kas Keluar"
-                  stroke="#f43f5e"
+                  stroke="#e11d48"
                   strokeWidth={2.5}
-                  dot={{ r: 3, fill: '#f43f5e' }}
+                  dot={{ r: 3, fill: '#e11d48' }}
                   activeDot={{ r: 5 }}
                 />
                 <Line
                   type="monotone"
                   dataKey="saldoKumulatif"
                   name="Saldo Kumulatif"
-                  stroke="#06b6d4"
+                  stroke="#0891b2"
                   strokeWidth={2}
                   strokeDasharray="4 4"
-                  dot={{ r: 2.5, fill: '#06b6d4' }}
+                  dot={{ r: 2.5, fill: '#0891b2' }}
                 />
               </LineChart>
             )}
@@ -520,14 +520,14 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
         </div>
 
         {/* Legend / Status Hint Footer */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-2.5 mt-1 border-t border-slate-900 text-[10px] text-slate-400">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-2.5 mt-1 border-t border-slate-200 text-[10px] text-slate-600">
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" />
+            <span className="flex items-center gap-1 font-medium">
+              <span className="w-2.5 h-2.5 rounded-sm bg-emerald-600 inline-block" />
               Kas Masuk {includeIuran ? '(Iuran & Lainnya)' : '(Kas Langsung)'}
             </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-sm bg-rose-500 inline-block" />
+            <span className="flex items-center gap-1 font-medium">
+              <span className="w-2.5 h-2.5 rounded-sm bg-rose-600 inline-block" />
               Kas Keluar (11 Komponen SOP)
             </span>
           </div>
@@ -535,7 +535,7 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
           <button
             type="button"
             onClick={() => setShowTable(!showTable)}
-            className="text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1 transition"
+            className="text-emerald-700 hover:text-emerald-800 font-semibold flex items-center gap-1 transition"
           >
             <Info className="w-3 h-3" />
             <span>{showTable ? 'Tutup Tabel Rincian' : 'Lihat Tabel Rincian Bulanan'}</span>
@@ -545,57 +545,57 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
 
       {/* Expandable Monthly Breakdown Table */}
       {showTable && (
-        <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950 p-2">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white p-2">
           <table className="w-full text-left text-[11px]">
             <thead>
-              <tr className="border-b border-slate-800 text-slate-400">
-                <th className="py-1.5 px-2 font-bold">Bulan</th>
-                <th className="py-1.5 px-2 font-bold text-right text-emerald-400">Kas Masuk</th>
-                <th className="py-1.5 px-2 font-bold text-right text-rose-400">Kas Keluar</th>
-                <th className="py-1.5 px-2 font-bold text-right">Surplus / (Defisit)</th>
-                <th className="py-1.5 px-2 font-bold text-right text-teal-400">Saldo Kumulatif</th>
-                <th className="py-1.5 px-2 font-bold text-center">Status</th>
+              <tr className="border-b border-slate-200 text-slate-600 bg-slate-50">
+                <th className="py-2 px-2.5 font-bold">Bulan</th>
+                <th className="py-2 px-2.5 font-bold text-right text-emerald-700">Kas Masuk</th>
+                <th className="py-2 px-2.5 font-bold text-right text-rose-700">Kas Keluar</th>
+                <th className="py-2 px-2.5 font-bold text-right text-slate-700">Surplus / (Defisit)</th>
+                <th className="py-2 px-2.5 font-bold text-right text-teal-700">Saldo Kumulatif</th>
+                <th className="py-2 px-2.5 font-bold text-center">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 font-mono">
+            <tbody className="divide-y divide-slate-100 font-mono">
               {filteredData.map((row) => (
                 <tr
                   key={row.monthKey}
-                  className={`hover:bg-slate-900/60 ${row.isCurrent ? 'bg-emerald-950/20' : ''}`}
+                  className={`hover:bg-slate-50 ${row.isCurrent ? 'bg-emerald-50/50' : ''}`}
                 >
-                  <td className="py-1.5 px-2 font-sans font-medium text-white flex items-center gap-1.5">
+                  <td className="py-2 px-2.5 font-sans font-medium text-slate-900 flex items-center gap-1.5">
                     <span>{row.namaLengkap}</span>
                     {row.isCurrent && (
-                      <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-900 text-emerald-300 font-bold font-sans">
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold font-sans">
                         Bulan Ini
                       </span>
                     )}
                   </td>
-                  <td className="py-1.5 px-2 text-right text-emerald-400">
+                  <td className="py-2 px-2.5 text-right text-emerald-700 font-bold">
                     {formatRupiah(row.kasMasuk)}
                   </td>
-                  <td className="py-1.5 px-2 text-right text-rose-400">
+                  <td className="py-2 px-2.5 text-right text-rose-700 font-bold">
                     {formatRupiah(row.kasKeluar)}
                   </td>
                   <td
-                    className={`py-1.5 px-2 text-right font-bold ${
-                      row.netSurplus >= 0 ? 'text-emerald-300' : 'text-rose-400'
+                    className={`py-2 px-2.5 text-right font-bold ${
+                      row.netSurplus >= 0 ? 'text-emerald-700' : 'text-rose-700'
                     }`}
                   >
                     {row.netSurplus >= 0 ? '+' : ''}
                     {formatRupiah(row.netSurplus)}
                   </td>
-                  <td className="py-1.5 px-2 text-right text-teal-300">
+                  <td className="py-2 px-2.5 text-right text-teal-700 font-bold">
                     {formatRupiah(row.saldoKumulatif)}
                   </td>
-                  <td className="py-1.5 px-2 text-center font-sans">
+                  <td className="py-2 px-2.5 text-center font-sans">
                     <span
                       className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${
                         row.netSurplus > 0
-                          ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/30'
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                           : row.netSurplus < 0
-                          ? 'bg-rose-950 text-rose-300 border border-rose-500/30'
-                          : 'bg-slate-800 text-slate-400'
+                          ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                          : 'bg-slate-100 text-slate-700 border border-slate-200'
                       }`}
                     >
                       {row.netSurplus > 0 ? 'Surplus' : row.netSurplus < 0 ? 'Defisit' : 'Nihil'}

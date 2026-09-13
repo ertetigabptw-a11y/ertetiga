@@ -39,6 +39,7 @@ import {
   Sliders,
   Settings2,
   Phone,
+  Archive,
 } from 'lucide-react';
 
 interface BendaharaModuleProps {
@@ -71,6 +72,8 @@ export const BendaharaModule: React.FC<BendaharaModuleProps> = ({ activeTab }) =
     activePeriode,
     updateKomponenIuranWarga,
     closingBulanKas,
+    arsipLaporanBulanan,
+    deleteArsipLaporanBulanan,
   } = useApp();
 
   // Sub-tab under Tab 1: Tagihan vs Kostumisasi 5 Komponen vs Dana Titipan vs Rekap Denda
@@ -89,10 +92,12 @@ export const BendaharaModule: React.FC<BendaharaModuleProps> = ({ activeTab }) =
   const [splitModalTagihan, setSplitModalTagihan] = useState<TagihanWarga | null>(null);
   const [splitDonasiNominal, setSplitDonasiNominal] = useState<number>(0);
 
-  // Laporan Tab states (Bulanan / Tahunan & Rekap / Per Individu)
-  const [reportType, setReportType] = useState<'rekap' | 'individu'>('rekap');
+  // Laporan Tab states (Bulanan / Tahunan & Rekap / Per Individu / Arsip Bulan Lalu)
+  const [reportType, setReportType] = useState<'rekap' | 'individu' | 'arsip'>('rekap');
   const [selectedIndividuWargaId, setSelectedIndividuWargaId] = useState<number>(1);
   const [searchIndividu, setSearchIndividu] = useState('');
+  const [selectedArsipPeriode, setSelectedArsipPeriode] = useState<string>('CURRENT');
+  const [selectedArsipDetail, setSelectedArsipDetail] = useState<any | null>(null);
 
   // Tagihan search & filter
   const [tagihanSearch, setTagihanSearch] = useState('');
@@ -178,9 +183,11 @@ export const BendaharaModule: React.FC<BendaharaModuleProps> = ({ activeTab }) =
   const [reportPeriod, setReportPeriod] = useState<'Bulanan' | 'Tahunan'>('Bulanan');
 
   // Calculations for Book of Cash (Buku Kas RT)
+  const saldoAwalKas = settings.saldoAwalKas || 0;
   const totalPemasukan = (pemasukanList || []).reduce((acc, curr) => acc + (curr.nominal || 0), 0);
   const totalPengeluaran = (pengeluaranList || []).reduce((acc, curr) => acc + (curr.nominal || 0), 0);
   const pemasukanBersih = totalPemasukan - totalPengeluaran;
+  const saldoAkhirKas = saldoAwalKas + pemasukanBersih;
 
   // Keuangan Status Bulan Sebelumnya & Berjalan
   // Kekurangan (-) bayar dari bulan sebelumnya menjadi Piutang Warga (Debit / Hak Kas RT)
@@ -644,12 +651,26 @@ export const BendaharaModule: React.FC<BendaharaModuleProps> = ({ activeTab }) =
     ]);
   };
 
-  const handleExportKasCSV = () => {
+  const handleExportKasCSV = (customArsip?: any) => {
+    const targetArsip =
+      customArsip ||
+      (selectedArsipPeriode !== 'CURRENT'
+        ? (arsipLaporanBulanan || []).find((a) => a.id === selectedArsipPeriode)
+        : null);
+
+    const pemList = targetArsip ? targetArsip.pemasukanSnapshot || [] : pemasukanList;
+    const pengList = targetArsip ? targetArsip.pengeluaranSnapshot || [] : pengeluaranList;
+    const sAwal = targetArsip ? targetArsip.saldoAwalKas : saldoAwalKas;
+    const totPem = targetArsip ? targetArsip.totalPemasukan : totalPemasukan;
+    const totPeng = targetArsip ? targetArsip.totalPengeluaran : totalPengeluaran;
+    const sAkhir = targetArsip ? targetArsip.saldoAkhirKas : saldoAkhirKas;
+    const periodeLabel = targetArsip ? targetArsip.periode : activePeriode;
+
     const headerPemasukan = ['Tanggal', 'Kategori', 'Sumber', 'Nominal', 'Keterangan'];
-    const rowsPemasukan = pemasukanList.map((p) => [p.tanggal, p.kategori, p.namaSumber, p.nominal, p.keterangan]);
+    const rowsPemasukan = pemList.map((p: any) => [p.tanggal, p.kategori, p.namaSumber, p.nominal, p.keterangan]);
 
     const headerPengeluaran = ['Tanggal', 'Komponen SOP RT', 'Penerima / Pekerjaan', 'Nominal', 'Keterangan'];
-    const rowsPengeluaran = pengeluaranList.map((p) => [
+    const rowsPengeluaran = pengList.map((p: any) => [
       p.tanggal,
       p.komponen,
       p.namaPenerimaOrPekerjaan || '-',
@@ -657,19 +678,21 @@ export const BendaharaModule: React.FC<BendaharaModuleProps> = ({ activeTab }) =
       p.keterangan || '-',
     ]);
 
-    exportToCSV(`Buku_Kas_RT03_${reportPeriod}`, [
-      ['LAPORAN PEMASUKAN KAS RT.03'],
+    exportToCSV(`Buku_Kas_RT03_${periodeLabel.replace(/\s+/g, '_')}`, [
+      [`LAPORAN PEMASUKAN KAS RT.03 - PERIODE ${periodeLabel}`],
       headerPemasukan,
       ...rowsPemasukan,
       [''],
-      ['LAPORAN PENGELUARAN KAS RT.03 (11 KOMPONEN SOP)'],
+      [`LAPORAN PENGELUARAN KAS RT.03 (11 KOMPONEN SOP) - PERIODE ${periodeLabel}`],
       headerPengeluaran,
       ...rowsPengeluaran,
       [''],
-      ['RINGKASAN TOTAL'],
-      ['Total Pemasukan', totalPemasukan],
-      ['Total Pengeluaran', totalPengeluaran],
-      ['Pemasukan Bersih (Saldo)', pemasukanBersih],
+      ['RINGKASAN NERACA KAS'],
+      ['Saldo Awal Kas RT', sAwal],
+      ['Total Penerimaan Kas', totPem],
+      ['Total Pengeluaran Kas', totPeng],
+      ['Surplus / Defisit Kas Bulan Ini', totPem - totPeng],
+      ['Saldo Akhir Kas Riil', sAkhir],
     ]);
   };
 
@@ -3018,352 +3041,443 @@ export const BendaharaModule: React.FC<BendaharaModuleProps> = ({ activeTab }) =
       {activeTab === 'laporan' && (
         <div className="space-y-4">
           {/* Header & Controls Card */}
-          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3.5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-              <div>
-                <div className="flex items-center gap-2 text-emerald-400 mb-0.5">
-                  <FileSpreadsheet className="w-4 h-4" />
-                  <span className="text-[11px] font-bold uppercase tracking-wider">
-                    Laporan Resmi Keuangan RT.03
-                  </span>
-                </div>
-                <h3 className="text-base font-bold text-white">Transparansi Laporan Kas & Iuran Warga</h3>
-                <p className="text-[11px] text-slate-400">
-                  Format Rekapitulasi & Per Individu Warga • Periode Bulanan & Tahunan
-                </p>
-              </div>
+          {(() => {
+            const activeArsipItem =
+              selectedArsipPeriode !== 'CURRENT'
+                ? (arsipLaporanBulanan || []).find((a) => a.id === selectedArsipPeriode) || null
+                : null;
 
-              {/* Periode Selector & Closing Action */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-slate-400 font-semibold">Periode:</span>
-                  <select
-                    value={reportPeriod}
-                    onChange={(e) => setReportPeriod(e.target.value as any)}
-                    className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white font-semibold focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="Bulanan">Bulanan ({activePeriode})</option>
-                    <option value="Tahunan">Tahunan (Tahun Anggaran 2026)</option>
-                  </select>
-                </div>
+            const currentReportSaldoAwal = activeArsipItem ? activeArsipItem.saldoAwalKas : saldoAwalKas;
+            const currentReportPemasukan = activeArsipItem ? activeArsipItem.totalPemasukan : totalPemasukan;
+            const currentReportPengeluaran = activeArsipItem ? activeArsipItem.totalPengeluaran : totalPengeluaran;
+            const currentReportPemasukanBersih = currentReportPemasukan - currentReportPengeluaran;
+            const currentReportSaldoAkhir = activeArsipItem ? activeArsipItem.saldoAkhirKas : saldoAkhirKas;
+            const currentReportPiutang = activeArsipItem ? activeArsipItem.totalPiutangWarga : totalHakKasRT;
+            const currentReportDeposit = activeArsipItem ? activeArsipItem.totalDepositWarga : totalDanaTitipanTersimpan;
+            const currentReportHutang = activeArsipItem
+              ? activeArsipItem.totalHutangRT
+              : (hutangList || []).reduce((acc, curr) => acc + (curr.sisaHutang || 0), 0);
+            const currentReportPeriode = activeArsipItem ? activeArsipItem.periode : activePeriode;
+            const currentReportPemasukanList = activeArsipItem ? activeArsipItem.pemasukanSnapshot || [] : pemasukanList;
+            const currentReportPengeluaranList = activeArsipItem ? activeArsipItem.pengeluaranSnapshot || [] : pengeluaranList;
+            const currentReportTagihanList = activeArsipItem ? activeArsipItem.tagihanSnapshot || [] : tagihanList;
 
-                <button
-                  type="button"
-                  onClick={() => setShowClosingModal(true)}
-                  className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95"
-                  title="Closing Buku Kas & Buka Periode Baru Kapan Saja"
-                >
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>Closing Bulan</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Sub-toggle: Rekapitulasi Kas vs Per Individu Warga */}
-            <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-950 border border-slate-800 text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => setReportType('rekap')}
-                className={`py-2 px-3 rounded-lg transition text-center flex items-center justify-center gap-1.5 ${
-                  reportType === 'rekap'
-                    ? 'bg-emerald-600 text-white font-bold shadow'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <BookOpen className="w-3.5 h-3.5" />
-                <span>1. Rekapitulasi Kas & Neraca RT</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setReportType('individu')}
-                className={`py-2 px-3 rounded-lg transition text-center flex items-center justify-center gap-1.5 ${
-                  reportType === 'individu'
-                    ? 'bg-blue-600 text-white font-bold shadow'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <Users className="w-3.5 h-3.5" />
-                <span>2. Laporan Per Individu Warga</span>
-              </button>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-2 pt-1 border-t border-slate-800">
-              <button
-                type="button"
-                onClick={() => {
-                  if (reportType === 'rekap') {
-                    handleExportKasCSV();
-                  } else {
-                    const sel =
-                      tagihanList.find((t) => t.wargaId === selectedIndividuWargaId) || tagihanList[0];
-                    if (sel) handleExportIndividuCSV(sel);
-                  }
-                }}
-                className="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition active:scale-95"
-              >
-                <Download className="w-3.5 h-3.5 text-emerald-400" />
-                <span>
-                  {reportType === 'rekap'
-                    ? 'Unduh Excel Rekapitulasi (.csv)'
-                    : 'Unduh Excel Individu (.csv)'}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={openPrintDialog}
-                className="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition active:scale-95"
-              >
-                <Printer className="w-3.5 h-3.5 text-blue-400" />
-                <span>Cetak / Simpan PDF Resmi</span>
-              </button>
-            </div>
-          </div>
-
-          {/* VIEW 1: LAPORAN REKAPITULASI KAS & NERACA RT.03 */}
-          {reportType === 'rekap' && (
-            <div className="p-5 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6 text-xs shadow-md print:bg-white print:text-black">
-              {/* Kop Laporan Resmi RT.03 */}
-              <div className="text-center border-b-2 border-slate-700 pb-4 space-y-1">
-                <h3 className="text-xs tracking-widest uppercase font-bold text-slate-400">
-                  Rukun Tetangga 03 Rukun Warga 14
-                </h3>
-                <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">
-                  Perumahan BPTW Cilacap Utara
-                </h2>
-                <div className="inline-block px-3 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold text-[11px] mt-1">
-                  LAPORAN REKAPITULASI KEUANGAN & NERACA KAS RT
-                </div>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Periode: {reportPeriod === 'Bulanan' ? 'Bulan September 2026' : 'Tahun Anggaran 2026'} • Dicetak:{' '}
-                  {new Date().toLocaleDateString('id-ID', { dateStyle: 'long' })}
-                </p>
-              </div>
-
-              {/* Visualisasi Tren Arus Kas RT (Recharts) */}
-              <div className="print:hidden">
-                <CashFlowTrendChart
-                  pemasukanList={pemasukanList}
-                  pengeluaranList={pengeluaranList}
-                  tagihanList={tagihanList}
-                  activePeriode={activePeriode}
-                />
-              </div>
-
-              {/* SECTION I: ARUS PENERIMAAN KAS (PEMASUKAN) */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between pb-1 border-b border-slate-800">
-                  <span className="font-extrabold text-sm text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <ArrowDownRight className="w-4 h-4" />
-                    I. Arus Penerimaan Kas (Pemasukan)
-                  </span>
-                  <span className="font-bold text-xs text-slate-400">Nominal (Rp)</span>
-                </div>
-
-                <div className="space-y-1.5 pl-2 font-mono">
-                  <div className="flex justify-between text-slate-300">
-                    <span className="font-sans">1. Iuran Rutin Warga (Dansos RT, RW, Pembangunan, Snack, Jimpitan)</span>
-                    <span>
-                      {formatRupiah(
-                        pemasukanList
-                          .filter((p) => p.kategori === 'Iuran Warga')
-                          .reduce((s, p) => s + p.nominal, 0)
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-slate-300">
-                    <span className="font-sans">2. Donasi Warga & Pengalihan Saldo Deposit</span>
-                    <span>
-                      {formatRupiah(
-                        pemasukanList
-                          .filter(
-                            (p) =>
-                              p.kategori === 'Donasi Warga' ||
-                              p.kategori === 'Donasi Kas RT'
-                          )
-                          .reduce((s, p) => s + p.nominal, 0)
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-slate-300">
-                    <span className="font-sans">3. Pelunasan Piutang & Cicilan Talangan Warga</span>
-                    <span>
-                      {formatRupiah(
-                        pemasukanList
-                          .filter((p) => p.kategori.includes('Piutang'))
-                          .reduce((s, p) => s + p.nominal, 0)
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-slate-300">
-                    <span className="font-sans">4. Pemasukan Kas Lainnya & Swadaya Gotong Royong</span>
-                    <span>
-                      {formatRupiah(
-                        pemasukanList
-                          .filter(
-                            (p) =>
-                              !['Iuran Warga', 'Donasi Warga', 'Donasi Kas RT'].includes(p.kategori) &&
-                              !p.kategori.includes('Piutang')
-                          )
-                          .reduce((s, p) => s + p.nominal, 0)
-                      )}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between text-white font-bold pt-1.5 border-t border-slate-800 text-sm">
-                    <span className="font-sans">Total Penerimaan Kas:</span>
-                    <span className="text-emerald-400">{formatRupiah(totalPemasukan)}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* SECTION II: ARUS PENGELUARAN KAS (11 KOMPONEN SOP) */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between pb-1 border-b border-slate-800">
-                  <span className="font-extrabold text-sm text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <ArrowUpRight className="w-4 h-4" />
-                    II. Arus Pengeluaran Kas (11 Komponen SOP RT.03)
-                  </span>
-                  <span className="font-bold text-xs text-slate-400">Nominal (Rp)</span>
-                </div>
-
-                <div className="space-y-1.5 pl-2 font-mono">
-                  {[
-                    'Dana Apresiasi RT',
-                    'Dansos RW',
-                    'Bayar Listrik Pos',
-                    'Bayar Tagihan PDAM',
-                    'Uang Snack Rapat RT',
-                    'Santunan Duka Cita (Kematian)',
-                    'Bantuan Warga Sakit (Rawat Inap)',
-                    'Logistik POS Ronda',
-                    'Logistik Kerja Bakti',
-                    'Pembelian material pekerjaan',
-                    'Pengeluaran lainnya',
-                  ].map((komp, idx) => {
-                    const nom = pengeluaranList
-                      .filter((p) => p.komponen === komp)
-                      .reduce((s, p) => s + p.nominal, 0);
-
-                    return (
-                      <div key={komp} className="flex justify-between text-slate-300">
-                        <span className="font-sans">
-                          {idx + 1}. {komp}
+            return (
+              <>
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div>
+                      <div className="flex items-center gap-2 text-emerald-400 mb-0.5">
+                        <FileSpreadsheet className="w-4 h-4" />
+                        <span className="text-[11px] font-bold uppercase tracking-wider">
+                          Laporan Resmi Keuangan RT.03
                         </span>
-                        <span>{formatRupiah(nom)}</span>
+                        {activeArsipItem && (
+                          <span className="px-2 py-0.5 rounded-full bg-purple-900/60 border border-purple-400/40 text-purple-300 font-mono text-[9px] font-bold">
+                            Arsip Tutup Buku
+                          </span>
+                        )}
                       </div>
-                    );
-                  })}
+                      <h3 className="text-base font-bold text-white">Transparansi Laporan Kas & Iuran Warga</h3>
+                      <p className="text-[11px] text-slate-400">
+                        Format Rekapitulasi, Per Individu Warga, & Arsip Bulan Terlewati
+                      </p>
+                    </div>
 
-                  <div className="flex justify-between text-white font-bold pt-1.5 border-t border-slate-800 text-sm">
-                    <span className="font-sans">Total Pengeluaran Kas (11 Komponen):</span>
-                    <span className="text-rose-400">{formatRupiah(totalPengeluaran)}</span>
+                    {/* Periode Selector & Closing Action */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-slate-400 font-semibold">Periode:</span>
+                        <select
+                          value={selectedArsipPeriode}
+                          onChange={(e) => {
+                            setSelectedArsipPeriode(e.target.value);
+                            if (e.target.value !== 'CURRENT' && reportType === 'individu') {
+                              setReportType('rekap');
+                            }
+                          }}
+                          className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white font-semibold focus:outline-none focus:border-emerald-500"
+                        >
+                          <option value="CURRENT">Periode Berjalan ({activePeriode})</option>
+                          {(arsipLaporanBulanan || []).map((arsip) => (
+                            <option key={arsip.id} value={arsip.id}>
+                              Arsip: {arsip.periode} (Tutup Buku {arsip.tanggalClosing})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowClosingModal(true)}
+                        className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95"
+                        title="Closing Buku Kas & Buka Periode Baru Kapan Saja"
+                      >
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>Closing Bulan</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              {/* SECTION III: POSISI KAS BERSIH (SALDO) */}
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                <div>
-                  <span className="text-xs font-bold text-slate-400 uppercase block">
-                    III. Posisi Kas Bersih (Saldo Akhir)
-                  </span>
-                  <span className="text-[11px] text-slate-500">
-                    Total Penerimaan Kas dikurangi Total Pengeluaran
-                  </span>
-                </div>
-                <span className="text-base sm:text-lg font-black font-mono text-emerald-300">
-                  {formatRupiah(pemasukanBersih)}
-                </span>
-              </div>
-
-              {/* SECTION IV: NERACA POSISI PIUTANG, HUTANG & TITIPAN WARGA */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between pb-1 border-b border-slate-800">
-                  <span className="font-extrabold text-sm text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Coins className="w-4 h-4" />
-                    IV. Neraca Hak & Kewajiban Kas RT.03
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                  <div className="p-3 rounded-xl bg-slate-950 border border-amber-500/30 space-y-1">
-                    <span className="text-[10px] text-slate-400 uppercase font-bold block">
-                      1. Piutang Warga (Debit / Hak RT)
-                    </span>
-                    <span className="text-sm font-black font-mono text-amber-300">
-                      {formatRupiah(
-                        (tagihanList || [])
-                          .filter((t) => t.statusBayar !== 'Lunas')
-                          .reduce(
-                            (s, t) => s + Math.max(0, (t.totalKewajiban || 0) - (t.jumlahDibayar || 0)),
-                            0
-                          ) +
-                          (piutangLainnyaList || [])
-                            .filter((p) => p.status === 'Belum Lunas')
-                            .reduce((s, p) => s + (p.sisaPiutang || 0), 0)
+                  {/* Sub-toggle: Rekapitulasi Kas vs Per Individu Warga vs Arsip Bulan Terlewati */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 p-1 rounded-xl bg-slate-950 border border-slate-800 text-xs font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => setReportType('rekap')}
+                      className={`py-2 px-3 rounded-lg transition text-center flex items-center justify-center gap-1.5 ${
+                        reportType === 'rekap'
+                          ? 'bg-emerald-600 text-white font-bold shadow'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      <span>1. Rekapitulasi Kas & Neraca RT</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setReportType('individu')}
+                      className={`py-2 px-3 rounded-lg transition text-center flex items-center justify-center gap-1.5 ${
+                        reportType === 'individu'
+                          ? 'bg-blue-600 text-white font-bold shadow'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <Users className="w-3.5 h-3.5" />
+                      <span>2. Laporan Per Individu Warga</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setReportType('arsip')}
+                      className={`py-2 px-3 rounded-lg transition text-center flex items-center justify-center gap-1.5 relative ${
+                        reportType === 'arsip'
+                          ? 'bg-purple-600 text-white font-bold shadow'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <Archive className="w-3.5 h-3.5" />
+                      <span>3. Arsip Laporan Kas Bulanan</span>
+                      {(arsipLaporanBulanan?.length || 0) > 0 && (
+                        <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-purple-900 border border-purple-400/50 text-purple-200">
+                          {arsipLaporanBulanan.length}
+                        </span>
                       )}
-                    </span>
-                    <p className="text-[10px] text-slate-400">
-                      Tagihan belum bayar & pinjaman/talangan darurat warga.
-                    </p>
+                    </button>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-slate-950 border border-rose-500/30 space-y-1">
-                    <span className="text-[10px] text-slate-400 uppercase font-bold block">
-                      2. Hutang RT (Kredit / Kewajiban RT)
-                    </span>
-                    <span className="text-sm font-black font-mono text-rose-300">
-                      {formatRupiah(
-                        (hutangList || [])
-                          .filter((h) => h.status === 'Belum Lunas')
-                          .reduce((s, h) => s + (h.sisaHutang || 0), 0)
-                      )}
-                    </span>
-                    <p className="text-[10px] text-slate-400">
-                      Kewajiban tempo pembelian material/belanja operasional ke vendor.
-                    </p>
-                  </div>
+                  {/* Active Archive Notice Banner */}
+                  {activeArsipItem && reportType === 'rekap' && (
+                    <div className="p-3 rounded-xl bg-purple-950/60 border border-purple-500/40 flex items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2">
+                        <Archive className="w-4 h-4 text-purple-300 shrink-0" />
+                        <span className="text-purple-200 font-medium">
+                          Menampilkan data arsip tutup buku periode <strong>{activeArsipItem.periode}</strong> (disimpan pada {activeArsipItem.tanggalClosing}).
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedArsipPeriode('CURRENT')}
+                        className="px-2.5 py-1 rounded-lg bg-purple-700 hover:bg-purple-600 text-white font-bold text-[11px] whitespace-nowrap transition"
+                      >
+                        Kembali ke Periode Berjalan ({activePeriode})
+                      </button>
+                    </div>
+                  )}
 
-                  <div className="p-3 rounded-xl bg-slate-950 border border-teal-500/30 space-y-1">
-                    <span className="text-[10px] text-slate-400 uppercase font-bold block">
-                      3. Saldo Deposit Warga
-                    </span>
-                    <span className="text-sm font-black font-mono text-teal-300">
-                      {formatRupiah(totalDanaTitipanTersimpan)}
-                    </span>
-                    <p className="text-[10px] text-slate-400">
-                      Saldo deposit warga dari bulan lalu untuk pembayaran tagihan & donasi.
-                    </p>
+                  {/* Action Buttons */}
+                  <div className="flex flex-col sm:flex-row gap-2 pt-1 border-t border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (reportType === 'rekap') {
+                          handleExportKasCSV(activeArsipItem);
+                        } else {
+                          const sel =
+                            currentReportTagihanList.find((t: any) => t.wargaId === selectedIndividuWargaId) ||
+                            currentReportTagihanList[0];
+                          if (sel) handleExportIndividuCSV(sel);
+                        }
+                      }}
+                      className="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition active:scale-95"
+                    >
+                      <Download className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>
+                        {reportType === 'rekap'
+                          ? `Unduh Excel Rekap ${currentReportPeriode} (.csv)`
+                          : 'Unduh Excel Individu (.csv)'}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={openPrintDialog}
+                      className="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition active:scale-95"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-blue-400" />
+                      <span>Cetak / Simpan PDF Resmi</span>
+                    </button>
                   </div>
                 </div>
-              </div>
 
-              {/* Lembar Tanda Tangan Pengurus */}
-              <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-800 text-center">
-                <div className="space-y-12">
-                  <span className="text-slate-400 text-xs block">Mengetahui, Ketua RT.03</span>
-                  <div>
-                    <p className="font-bold text-white text-xs border-b border-slate-700 pb-0.5 inline-block min-w-[120px]">
-                      TITO
-                    </p>
-                    <p className="text-[10px] text-slate-500">Ketua RT.03 RW.14</p>
-                  </div>
-                </div>
+                {/* VIEW 1: LAPORAN REKAPITULASI KAS & NERACA RT.03 */}
+                {reportType === 'rekap' && (
+                  <div className="p-5 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6 text-xs shadow-md print:bg-white print:text-black">
+                    {/* Kop Laporan Resmi RT.03 */}
+                    <div className="text-center border-b-2 border-slate-700 pb-4 space-y-1">
+                      <h3 className="text-xs tracking-widest uppercase font-bold text-slate-400">
+                        Rukun Tetangga 03 Rukun Warga 14
+                      </h3>
+                      <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">
+                        Perumahan BPTW Cilacap Utara
+                      </h2>
+                      <div className="inline-block px-3 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold text-[11px] mt-1">
+                        LAPORAN REKAPITULASI KEUANGAN & NERACA KAS RT
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        Periode: <strong>{currentReportPeriode}</strong> {activeArsipItem ? '(Status: Arsip Tutup Buku)' : '(Status: Periode Berjalan)'} • Dicetak:{' '}
+                        {new Date().toLocaleDateString('id-ID', { dateStyle: 'long' })}
+                      </p>
+                    </div>
 
-                <div className="space-y-12">
-                  <span className="text-slate-400 text-xs block">Dibuat oleh, Bendahara RT.03</span>
-                  <div>
-                    <p className="font-bold text-white text-xs border-b border-slate-700 pb-0.5 inline-block min-w-[120px]">
-                      BENDAHARA RT.03
-                    </p>
-                    <p className="text-[10px] text-slate-500">Pengelola Keuangan Kas RT</p>
+                    {/* Visualisasi Tren Arus Kas RT (Recharts) */}
+                    {!activeArsipItem && (
+                      <div className="print:hidden">
+                        <CashFlowTrendChart
+                          pemasukanList={pemasukanList}
+                          pengeluaranList={pengeluaranList}
+                          tagihanList={tagihanList}
+                          activePeriode={activePeriode}
+                        />
+                      </div>
+                    )}
+
+                    {/* SECTION 0: SALDO AWAL KAS */}
+                    <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-bold text-slate-300 uppercase block">
+                          I. Saldo Awal Kas RT.03
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          Kas riil awal periode {currentReportPeriode} yang dapat dibelanjakan
+                        </span>
+                      </div>
+                      <span className="text-sm sm:text-base font-black font-mono text-emerald-400">
+                        {formatRupiah(currentReportSaldoAwal)}
+                      </span>
+                    </div>
+
+                    {/* SECTION I: ARUS PENERIMAAN KAS (PEMASUKAN) */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                        <span className="font-extrabold text-sm text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <ArrowDownRight className="w-4 h-4" />
+                          II. Arus Penerimaan Kas (Pemasukan)
+                        </span>
+                        <span className="font-bold text-xs text-slate-400">Nominal (Rp)</span>
+                      </div>
+
+                      <div className="space-y-1.5 pl-2 font-mono">
+                        <div className="flex justify-between text-slate-300">
+                          <span className="font-sans">1. Iuran Rutin Warga (Dansos RT, RW, Pembangunan, Snack, Jimpitan)</span>
+                          <span>
+                            {formatRupiah(
+                              currentReportPemasukanList
+                                .filter((p: any) => p.kategori === 'Iuran Warga')
+                                .reduce((s: number, p: any) => s + (p.nominal || 0), 0)
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-slate-300">
+                          <span className="font-sans">2. Donasi Warga & Pengalihan Saldo Deposit</span>
+                          <span>
+                            {formatRupiah(
+                              currentReportPemasukanList
+                                .filter(
+                                  (p: any) =>
+                                    p.kategori === 'Donasi Warga' ||
+                                    p.kategori === 'Donasi Kas RT'
+                                )
+                                .reduce((s: number, p: any) => s + (p.nominal || 0), 0)
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-slate-300">
+                          <span className="font-sans">3. Pelunasan Piutang & Cicilan Talangan Warga</span>
+                          <span>
+                            {formatRupiah(
+                              currentReportPemasukanList
+                                .filter((p: any) => p.kategori && p.kategori.includes('Piutang'))
+                                .reduce((s: number, p: any) => s + (p.nominal || 0), 0)
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-slate-300">
+                          <span className="font-sans">4. Pemasukan Kas Lainnya & Swadaya Gotong Royong</span>
+                          <span>
+                            {formatRupiah(
+                              currentReportPemasukanList
+                                .filter(
+                                  (p: any) =>
+                                    !['Iuran Warga', 'Donasi Warga', 'Donasi Kas RT'].includes(p.kategori) &&
+                                    !p.kategori.includes('Piutang')
+                                )
+                                .reduce((s: number, p: any) => s + (p.nominal || 0), 0)
+                            )}
+                          </span>
+                        </div>
+
+                        <div className="flex justify-between text-white font-bold pt-1.5 border-t border-slate-800 text-sm">
+                          <span className="font-sans">Total Penerimaan Kas:</span>
+                          <span className="text-emerald-400">{formatRupiah(currentReportPemasukan)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* SECTION II: ARUS PENGELUARAN KAS (11 KOMPONEN SOP) */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                        <span className="font-extrabold text-sm text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <ArrowUpRight className="w-4 h-4" />
+                          III. Arus Pengeluaran Kas (11 Komponen SOP RT.03)
+                        </span>
+                        <span className="font-bold text-xs text-slate-400">Nominal (Rp)</span>
+                      </div>
+
+                      <div className="space-y-1.5 pl-2 font-mono">
+                        {[
+                          'Dana Apresiasi RT',
+                          'Dansos RW',
+                          'Bayar Listrik Pos',
+                          'Bayar Tagihan PDAM',
+                          'Uang Snack Rapat RT',
+                          'Santunan Duka Cita (Kematian)',
+                          'Bantuan Warga Sakit (Rawat Inap)',
+                          'Logistik POS Ronda',
+                          'Logistik Kerja Bakti',
+                          'Pembelian material pekerjaan',
+                          'Pengeluaran lainnya',
+                        ].map((komp, idx) => {
+                          const nom = currentReportPengeluaranList
+                            .filter((p: any) => p.komponen === komp)
+                            .reduce((s: number, p: any) => s + (p.nominal || 0), 0);
+
+                          return (
+                            <div key={komp} className="flex justify-between text-slate-300">
+                              <span className="font-sans">
+                                {idx + 1}. {komp}
+                              </span>
+                              <span>{formatRupiah(nom)}</span>
+                            </div>
+                          );
+                        })}
+
+                        <div className="flex justify-between text-white font-bold pt-1.5 border-t border-slate-800 text-sm">
+                          <span className="font-sans">Total Pengeluaran Kas (11 Komponen):</span>
+                          <span className="text-rose-400">{formatRupiah(currentReportPengeluaran)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* SECTION III: POSISI KAS BERSIH (SALDO AKHIR RIIL) */}
+                    <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <div>
+                          <span className="text-xs font-bold text-slate-300 uppercase block">
+                            IV. Posisi Kas Bersih & Saldo Kas Riil
+                          </span>
+                          <span className="text-[11px] text-slate-400">
+                            Saldo Awal Kas + Penerimaan Kas - Pengeluaran Kas
+                          </span>
+                        </div>
+                        <span className="text-sm font-bold text-slate-300 font-mono">
+                          Surplus/Defisit: {formatRupiah(currentReportPemasukanBersih)}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-xs font-extrabold text-white uppercase">
+                          Saldo Akhir Kas RT.03 ({currentReportPeriode}):
+                        </span>
+                        <span className="text-base sm:text-xl font-black font-mono text-emerald-400">
+                          {formatRupiah(currentReportSaldoAkhir)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* SECTION IV: NERACA POSISI PIUTANG, HUTANG & TITIPAN WARGA */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                        <span className="font-extrabold text-sm text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <Coins className="w-4 h-4" />
+                          V. Neraca Hak & Kewajiban Kas RT.03
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                        <div className="p-3 rounded-xl bg-slate-950 border border-amber-500/30 space-y-1">
+                          <span className="text-[10px] text-slate-400 uppercase font-bold block">
+                            1. Piutang Warga (Debit / Hak RT)
+                          </span>
+                          <span className="text-sm font-black font-mono text-amber-300">
+                            {formatRupiah(currentReportPiutang)}
+                          </span>
+                          <p className="text-[10px] text-slate-400">
+                            Tagihan belum bayar & pinjaman/talangan darurat warga.
+                          </p>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-slate-950 border border-rose-500/30 space-y-1">
+                          <span className="text-[10px] text-slate-400 uppercase font-bold block">
+                            2. Hutang RT (Kredit / Kewajiban RT)
+                          </span>
+                          <span className="text-sm font-black font-mono text-rose-300">
+                            {formatRupiah(currentReportHutang)}
+                          </span>
+                          <p className="text-[10px] text-slate-400">
+                            Kewajiban tempo pembelian material/belanja operasional ke vendor.
+                          </p>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-slate-950 border border-teal-500/30 space-y-1">
+                          <span className="text-[10px] text-slate-400 uppercase font-bold block">
+                            3. Saldo Deposit Warga
+                          </span>
+                          <span className="text-sm font-black font-mono text-teal-300">
+                            {formatRupiah(currentReportDeposit)}
+                          </span>
+                          <p className="text-[10px] text-slate-400">
+                            Saldo deposit warga untuk pembayaran tagihan & donasi.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Lembar Tanda Tangan Pengurus */}
+                    <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-800 text-center">
+                      <div className="space-y-12">
+                        <span className="text-slate-400 text-xs block">Mengetahui, Ketua RT.03</span>
+                        <div>
+                          <p className="font-bold text-white text-xs border-b border-slate-700 pb-0.5 inline-block min-w-[120px]">
+                            TITO
+                          </p>
+                          <p className="text-[10px] text-slate-500">Ketua RT.03 RW.14</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-12">
+                        <span className="text-slate-400 text-xs block">Dibuat oleh, Bendahara RT.03</span>
+                        <div>
+                          <p className="font-bold text-white text-xs border-b border-slate-700 pb-0.5 inline-block min-w-[120px]">
+                            BENDAHARA RT.03
+                          </p>
+                          <p className="text-[10px] text-slate-500">Pengelola Keuangan Kas RT</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </div>
-          )}
+                )}
+              </>
+            );
+          })()}
 
           {/* VIEW 2: LAPORAN KEUANGAN PER INDIVIDU WARGA */}
           {reportType === 'individu' && (
@@ -3605,6 +3719,178 @@ export const BendaharaModule: React.FC<BendaharaModuleProps> = ({ activeTab }) =
               })()}
             </div>
           )}
+
+          {/* VIEW 3: ARSIP LAPORAN KAS BULANAN (BULAN-BULAN YANG SUDAH TERLEWATI) */}
+          {reportType === 'arsip' && (
+            <div className="space-y-4">
+              {/* Header Info Banner */}
+              <div className="p-4 rounded-2xl bg-slate-900 border border-purple-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-purple-500/20 text-purple-300">
+                    <Archive className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Arsip Pembukuan Kas Bulanan RT.03</h4>
+                    <p className="text-[11px] text-slate-400">
+                      Seluruh rekapitulasi penerimaan, pengeluaran, saldo kas riil, dan status iuran tiap warga dari bulan-bulan yang telah ditutup tersimpan permanen di sini.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right flex items-center gap-2">
+                  <span className="px-3 py-1 rounded-xl bg-slate-950 border border-purple-500/30 text-purple-300 font-bold font-mono text-xs">
+                    {arsipLaporanBulanan?.length || 0} Periode Diarsipkan
+                  </span>
+                </div>
+              </div>
+
+              {/* List of Archives */}
+              {(!arsipLaporanBulanan || arsipLaporanBulanan.length === 0) ? (
+                <div className="p-8 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-3">
+                  <div className="w-12 h-12 mx-auto rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                    <Archive className="w-6 h-6" />
+                  </div>
+                  <h4 className="text-sm font-bold text-white">Belum Ada Arsip Tutup Buku</h4>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    Arsip bulanan akan otomatis terbuat saat Anda atau Pengurus melakukan proses <strong>Closing Bulan</strong>. Seluruh riwayat saldo kas, mutasi pengeluaran, dan status iuran warga akan tersimpan rapi tanpa risiko terhapus.
+                  </p>
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowClosingModal(true)}
+                      className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg inline-flex items-center gap-2 transition"
+                    >
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>Lakukan Closing Bulan Sekarang</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {arsipLaporanBulanan.map((arsip) => {
+                    return (
+                      <div
+                        key={arsip.id}
+                        className="p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-purple-500/50 transition space-y-3 shadow-md"
+                      >
+                        {/* Header Period Card */}
+                        <div className="flex items-start justify-between gap-2 border-b border-slate-800 pb-2.5">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-extrabold text-white">
+                                {arsip.periode}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-md bg-purple-950 border border-purple-500/40 text-purple-300 font-mono text-[10px] font-bold">
+                                Tutup Buku
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-slate-400 block mt-0.5">
+                              Ditutup pada: {arsip.tanggalClosing} • Oleh: {arsip.closedBy || 'Bendahara / Super Admin'}
+                            </span>
+                          </div>
+
+                          <div className="text-right">
+                            <span className="text-[10px] text-slate-400 block">Saldo Akhir Kas:</span>
+                            <span className="text-xs font-black font-mono text-emerald-400">
+                              {formatRupiah(arsip.saldoAkhirKas)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Financial Snapshot Grid */}
+                        <div className="grid grid-cols-3 gap-2 text-center text-[10px]">
+                          <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 space-y-0.5">
+                            <span className="text-slate-400 font-semibold block">Saldo Awal</span>
+                            <span className="font-mono font-bold text-slate-200">
+                              {formatRupiah(arsip.saldoAwalKas)}
+                            </span>
+                          </div>
+                          <div className="p-2 rounded-xl bg-slate-950 border border-emerald-500/20 space-y-0.5">
+                            <span className="text-slate-400 font-semibold block">Penerimaan</span>
+                            <span className="font-mono font-bold text-emerald-400">
+                              {formatRupiah(arsip.totalPemasukan)}
+                            </span>
+                          </div>
+                          <div className="p-2 rounded-xl bg-slate-950 border border-rose-500/20 space-y-0.5">
+                            <span className="text-slate-400 font-semibold block">Pengeluaran</span>
+                            <span className="font-mono font-bold text-rose-400">
+                              {formatRupiah(arsip.totalPengeluaran)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Secondary Metrics */}
+                        <div className="flex items-center justify-between px-2 py-1.5 rounded-xl bg-slate-950/60 border border-slate-800 text-[10px] text-slate-400">
+                          <span>
+                            Piutang Warga: <strong className="text-amber-300 font-mono">{formatRupiah(arsip.totalPiutangWarga)}</strong>
+                          </span>
+                          <span>
+                            Deposit Warga: <strong className="text-teal-300 font-mono">{formatRupiah(arsip.totalDepositWarga)}</strong>
+                          </span>
+                          <span>
+                            Hutang RT: <strong className="text-rose-300 font-mono">{formatRupiah(arsip.totalHutangRT)}</strong>
+                          </span>
+                        </div>
+
+                        {arsip.catatanClosing && (
+                          <p className="text-[11px] text-slate-300 italic px-2 bg-slate-950/40 py-1 rounded-lg border border-slate-800/80">
+                            &quot;{arsip.catatanClosing}&quot;
+                          </p>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 pt-1 border-t border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedArsipPeriode(arsip.id);
+                              setReportType('rekap');
+                            }}
+                            className="flex-1 py-1.5 px-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-[11px] flex items-center justify-center gap-1.5 transition shadow"
+                          >
+                            <BookOpen className="w-3.5 h-3.5" />
+                            <span>Buka Laporan Lengkap</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setSelectedArsipDetail(arsip)}
+                            className="py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-[11px] flex items-center justify-center gap-1 transition"
+                            title="Lihat Snapshot Rincian"
+                          >
+                            <FileSpreadsheet className="w-3.5 h-3.5 text-blue-400" />
+                            <span>Rincian</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleExportKasCSV(arsip)}
+                            className="py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] transition"
+                            title="Unduh Excel .CSV Arsip"
+                          >
+                            <Download className="w-3.5 h-3.5 text-emerald-400" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm(`Hapus arsip laporan periode ${arsip.periode}? Tindakan ini tidak dapat dibatalkan.`)) {
+                                deleteArsipLaporanBulanan(arsip.id);
+                              }
+                            }}
+                            className="p-1.5 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 transition"
+                            title="Hapus Arsip"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -3781,6 +4067,171 @@ export const BendaharaModule: React.FC<BendaharaModuleProps> = ({ activeTab }) =
         onSave={handleSaveKomponen}
       />
 
+      {/* Modal Detail Snapshot Arsip Laporan Bulanan */}
+      {selectedArsipDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl bg-slate-900 border border-purple-500/40 shadow-2xl text-slate-100">
+            {/* Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-purple-500/20 text-purple-300">
+                  <Archive className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">
+                    Snapshot Arsip Periode: {selectedArsipDetail.periode}
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Ditutup pada {selectedArsipDetail.tanggalClosing} oleh {selectedArsipDetail.closedBy || 'Bendahara'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedArsipDetail(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-4 text-xs">
+              {/* Ringkasan Neraca Kas */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center font-mono">
+                <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-sans block">Saldo Awal Kas</span>
+                  <span className="text-xs font-bold text-slate-200">{formatRupiah(selectedArsipDetail.saldoAwalKas)}</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-950 border border-emerald-500/20">
+                  <span className="text-[10px] text-slate-400 font-sans block">Penerimaan</span>
+                  <span className="text-xs font-bold text-emerald-400">{formatRupiah(selectedArsipDetail.totalPemasukan)}</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-950 border border-rose-500/20">
+                  <span className="text-[10px] text-slate-400 font-sans block">Pengeluaran</span>
+                  <span className="text-xs font-bold text-rose-400">{formatRupiah(selectedArsipDetail.totalPengeluaran)}</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-950 border border-purple-500/30">
+                  <span className="text-[10px] text-slate-400 font-sans block">Saldo Akhir Riil</span>
+                  <span className="text-xs font-extrabold text-purple-300">{formatRupiah(selectedArsipDetail.saldoAkhirKas)}</span>
+                </div>
+              </div>
+
+              {/* Rincian Pengeluaran Kas Snapshot */}
+              <div className="space-y-2">
+                <h4 className="font-bold text-slate-200 text-xs flex items-center justify-between border-b border-slate-800 pb-1">
+                  <span>Mutasi Pengeluaran ({selectedArsipDetail.pengeluaranSnapshot?.length || 0} Transaksi)</span>
+                  <span className="text-rose-400 font-mono">{formatRupiah(selectedArsipDetail.totalPengeluaran)}</span>
+                </h4>
+                <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1">
+                  {(!selectedArsipDetail.pengeluaranSnapshot || selectedArsipDetail.pengeluaranSnapshot.length === 0) ? (
+                    <p className="text-[11px] text-slate-500 italic">Tidak ada transaksi pengeluaran pada periode ini (0 Pengeluaran).</p>
+                  ) : (
+                    selectedArsipDetail.pengeluaranSnapshot.map((peng: any, idx: number) => (
+                      <div key={idx} className="p-2 rounded-lg bg-slate-950 border border-slate-800/80 flex items-center justify-between text-[11px]">
+                        <div>
+                          <span className="font-semibold text-white block">{peng.komponen}</span>
+                          <span className="text-[10px] text-slate-400">{peng.tanggal} • {peng.namaPenerimaOrPekerjaan || peng.keterangan || '-'}</span>
+                        </div>
+                        <span className="font-mono font-bold text-rose-400">{formatRupiah(peng.nominal)}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Rincian Penerimaan Snapshot */}
+              <div className="space-y-2">
+                <h4 className="font-bold text-slate-200 text-xs flex items-center justify-between border-b border-slate-800 pb-1">
+                  <span>Penerimaan Kas ({selectedArsipDetail.pemasukanSnapshot?.length || 0} Sumber)</span>
+                  <span className="text-emerald-400 font-mono">{formatRupiah(selectedArsipDetail.totalPemasukan)}</span>
+                </h4>
+                <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1">
+                  {(!selectedArsipDetail.pemasukanSnapshot || selectedArsipDetail.pemasukanSnapshot.length === 0) ? (
+                    <p className="text-[11px] text-slate-500 italic">Tidak ada transaksi pemasukan pada periode ini (0 Pemasukan).</p>
+                  ) : (
+                    selectedArsipDetail.pemasukanSnapshot.map((pem: any, idx: number) => (
+                      <div key={idx} className="p-2 rounded-lg bg-slate-950 border border-slate-800/80 flex items-center justify-between text-[11px]">
+                        <div>
+                          <span className="font-semibold text-white block">{pem.kategori} - {pem.namaSumber}</span>
+                          <span className="text-[10px] text-slate-400">{pem.tanggal} • {pem.keterangan || '-'}</span>
+                        </div>
+                        <span className="font-mono font-bold text-emerald-400">{formatRupiah(pem.nominal)}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Status Iuran Warga Snapshot */}
+              <div className="space-y-2">
+                <h4 className="font-bold text-slate-200 text-xs flex items-center justify-between border-b border-slate-800 pb-1">
+                  <span>Status Iuran Warga ({selectedArsipDetail.tagihanSnapshot?.length || 0} Kavling)</span>
+                  <span className="text-amber-300 font-mono text-[11px]">
+                    Piutang: {formatRupiah(selectedArsipDetail.totalPiutangWarga)}
+                  </span>
+                </h4>
+                <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
+                  {(selectedArsipDetail.tagihanSnapshot || []).map((tag: any, idx: number) => {
+                    const isLunas = tag.statusBayar === 'Lunas' || tag.statusBayar === 'Lebih Bayar';
+                    return (
+                      <div key={idx} className="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800/80 flex items-center justify-between text-[11px]">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-white w-12">{tag.blokNo}</span>
+                          <span className="text-slate-300 truncate max-w-[140px]">{tag.nama}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono text-slate-300">{formatRupiah(tag.totalKewajiban)}</span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            isLunas ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/40' : 'bg-rose-950 text-rose-300 border border-rose-500/40'
+                          }`}>
+                            {tag.statusBayar}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="p-4 border-t border-slate-800 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedArsipPeriode(selectedArsipDetail.id);
+                  setReportType('rekap');
+                  setSelectedArsipDetail(null);
+                }}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 transition"
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Buka Lembar Laporan Penuh & Cetak</span>
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleExportKasCSV(selectedArsipDetail)}
+                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs flex items-center gap-1.5 transition"
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Unduh .CSV</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedArsipDetail(null)}
+                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Closing Bulan Kas & Buka Periode Baru Kapan Saja */}
       <ClosingBulanModal
         isOpen={showClosingModal}
@@ -3789,7 +4240,7 @@ export const BendaharaModule: React.FC<BendaharaModuleProps> = ({ activeTab }) =
         onExecuteClosing={(newPeriode) => closingBulanKas(newPeriode)}
         totalPemasukan={totalPemasukan}
         totalPengeluaran={totalPengeluaran}
-        saldoAkhirKas={pemasukanBersih}
+        saldoAkhirKas={saldoAkhirKas}
         totalPiutangWarga={totalHakKasRT}
         countWargaPiutang={tagihanList.filter((t) => Math.max(0, t.totalKewajiban - t.jumlahDibayar) > 0).length}
         totalDepositWarga={totalDanaTitipanTersimpan}
