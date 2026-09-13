@@ -1,0 +1,238 @@
+{
+  "entities": {
+    "Warga": {
+      "title": "Warga",
+      "description": "Data warga dan penghuni Perum BPTW RT.03",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number" },
+        "blok": { "type": "string" },
+        "noRumah": { "type": "string" },
+        "namaPenghuni": { "type": "string" },
+        "namaPemilik": { "type": "string" },
+        "statusHuni": { "type": "string" },
+        "kriteriaRonda": { "type": "string" },
+        "totalIuran": { "type": "number" }
+      }
+    },
+    "RondaSchedule": {
+      "title": "RondaSchedule",
+      "description": "Jadwal dinas ronda malam mingguan",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "hari": { "type": "string" },
+        "petugasNames": { "type": "array" }
+      }
+    },
+    "PresensiRonda": {
+      "title": "PresensiRonda",
+      "description": "Log presensi selfie patroli ronda malam",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "wargaId": { "type": "number" },
+        "nama": { "type": "string" },
+        "tanggal": { "type": "string" },
+        "waktuPresensi": { "type": "string" },
+        "jarakMeter": { "type": "number" },
+        "fotoSelfie": { "type": "string" }
+      }
+    },
+    "DendaRondaEntry": {
+      "title": "DendaRondaEntry",
+      "description": "Rekap denda ronda 4 minggu bulan berjalan",
+      "type": "object",
+      "properties": {
+        "wargaId": { "type": "number" },
+        "nama": { "type": "string" },
+        "blok": { "type": "string" },
+        "noRumah": { "type": "string" },
+        "minggu1": { "type": "boolean" },
+        "minggu2": { "type": "boolean" },
+        "minggu3": { "type": "boolean" },
+        "minggu4": { "type": "boolean" },
+        "jumlahAlpa": { "type": "number" },
+        "dendaTotal": { "type": "number" },
+        "statusPushed": { "type": "boolean" }
+      }
+    },
+    "TagihanWarga": {
+      "title": "TagihanWarga",
+      "description": "Data tagihan dan kwitansi iuran warga",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "wargaId": { "type": "number" },
+        "nama": { "type": "string" },
+        "blokNo": { "type": "string" },
+        "periode": { "type": "string" },
+        "totalIuran": { "type": "number" },
+        "totalKewajiban": { "type": "number" },
+        "jumlahDibayar": { "type": "number" },
+        "statusBayar": { "type": "string" }
+      }
+    },
+    "PengeluaranKas": {
+      "title": "PengeluaranKas",
+      "description": "Catatan pengeluaran buku kas RT.03",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tanggal": { "type": "string" },
+        "pos": { "type": "string" },
+        "deskripsi": { "type": "string" },
+        "nominal": { "type": "number" }
+      }
+    },
+    "PemasukanKas": {
+      "title": "PemasukanKas",
+      "description": "Catatan pemasukan tambahan kas RT.03",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tanggal": { "type": "string" },
+        "sumber": { "type": "string" },
+        "nominal": { "type": "number" }
+      }
+    },
+    "HutangRT": {
+      "title": "HutangRT",
+      "description": "Kewajiban hutang kas RT kepada pihak ketiga",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "kreditor": { "type": "string" },
+        "totalHutang": { "type": "number" },
+        "sisaHutang": { "type": "number" }
+      }
+    },
+    "PiutangWargaLainnya": {
+      "title": "PiutangWargaLainnya",
+      "description": "Piutang dana talangan/non-iuran warga",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "namaDebitor": { "type": "string" },
+        "totalPiutang": { "type": "number" },
+        "sisaPiutang": { "type": "number" }
+      }
+    },
+    "KerjaBaktiEvent": {
+      "title": "KerjaBaktiEvent",
+      "description": "Agenda kerja bakti dan absensi gotong royong",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "judul": { "type": "string" },
+        "tanggal": { "type": "string" },
+        "isPushedToBendahara": { "type": "boolean" }
+      }
+    },
+    "SuratRT": {
+      "title": "SuratRT",
+      "description": "Arsip surat pengantar dan keputusan RT",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nomorSurat": { "type": "string" },
+        "perihal": { "type": "string" }
+      }
+    },
+    "Pengumuman": {
+      "title": "Pengumuman",
+      "description": "Siaran informasi dan pengumuman warga RT.03",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "judul": { "type": "string" },
+        "isi": { "type": "string" },
+        "tanggal": { "type": "string" }
+      }
+    },
+    "KeluhanWarga": {
+      "title": "KeluhanWarga",
+      "description": "Aspirasi dan pengaduan warga RT.03",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "wargaId": { "type": "number" },
+        "judul": { "type": "string" },
+        "status": { "type": "string" }
+      }
+    },
+    "AppSettings": {
+      "title": "AppSettings",
+      "description": "Konfigurasi tarif dan koordinat pos ronda",
+      "type": "object",
+      "properties": {
+        "namaRT": { "type": "string" },
+        "posRondaLat": { "type": "number" },
+        "posRondaLng": { "type": "number" },
+        "posRondaRadiusMeters": { "type": "number" }
+      }
+    }
+  },
+  "firestore": {
+    "/warga/{wargaId}": {
+      "schema": "Warga",
+      "description": "Koleksi data kependudukan warga RT.03"
+    },
+    "/ronda_schedules/{scheduleId}": {
+      "schema": "RondaSchedule",
+      "description": "Koleksi jadwal regu ronda malam"
+    },
+    "/presensi_ronda/{presensiId}": {
+      "schema": "PresensiRonda",
+      "description": "Koleksi log kehadiran ronda malam"
+    },
+    "/denda_ronda/{dendaId}": {
+      "schema": "DendaRondaEntry",
+      "description": "Koleksi rekap kehadiran dan denda 4 minggu"
+    },
+    "/tagihan/{tagihanId}": {
+      "schema": "TagihanWarga",
+      "description": "Koleksi data tagihan bulanan warga"
+    },
+    "/pengeluaran/{pengeluaranId}": {
+      "schema": "PengeluaranKas",
+      "description": "Koleksi pengeluaran buku kas RT"
+    },
+    "/pemasukan/{pemasukanId}": {
+      "schema": "PemasukanKas",
+      "description": "Koleksi pemasukan buku kas RT"
+    },
+    "/hutang/{hutangId}": {
+      "schema": "HutangRT",
+      "description": "Koleksi catatan hutang RT"
+    },
+    "/piutang_lainnya/{piutangId}": {
+      "schema": "PiutangWargaLainnya",
+      "description": "Koleksi catatan piutang non-iuran warga"
+    },
+    "/kerja_bakti/{eventId}": {
+      "schema": "KerjaBaktiEvent",
+      "description": "Koleksi agenda kerja bakti"
+    },
+    "/surat/{suratId}": {
+      "schema": "SuratRT",
+      "description": "Koleksi surat pengantar dan administrasi RT"
+    },
+    "/pengumuman/{pengumumanId}": {
+      "schema": "Pengumuman",
+      "description": "Koleksi pengumuman siaran warga"
+    },
+    "/keluhan/{keluhanId}": {
+      "schema": "KeluhanWarga",
+      "description": "Koleksi aspirasi dan keluhan warga"
+    },
+    "/app_settings/{settingsId}": {
+      "schema": "AppSettings",
+      "description": "Pengaturan sistem dan koordinat RT"
+    },
+    "/sync_metadata/{metaId}": {
+      "schema": "AppSettings",
+      "description": "Metadata status sinkronisasi antarperangkat"
+    }
+  }
+}

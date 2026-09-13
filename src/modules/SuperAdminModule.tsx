@@ -18,6 +18,8 @@ import {
   MapPin,
   Clock,
   Radio,
+  Cloud,
+  RefreshCw,
 } from 'lucide-react';
 
 interface SuperAdminModuleProps {
@@ -34,6 +36,8 @@ export const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ activeTab })
     resetAllData,
     sendWhatsAppDirect,
     wargaList,
+    syncStatus,
+    forceSyncToCloud,
   } = useApp();
 
   // Settings form state
@@ -50,8 +54,11 @@ export const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ activeTab })
 
   // User edit state
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
   const [editUsername, setEditUsername] = useState('');
   const [editPassword, setEditPassword] = useState('');
+  const [editJabatan, setEditJabatan] = useState('');
+  const [editKontakHp, setEditKontakHp] = useState('');
 
   // WhatsApp broadcast test state
   const [testTarget, setTestTarget] = useState(settings.targetGroupWa);
@@ -78,15 +85,24 @@ export const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ activeTab })
     setTimeout(() => setSaveSuccess(false), 3000);
   };
 
-  const handleStartEditUser = (userId: string, currentUName: string) => {
-    setEditingUserId(userId);
-    setEditUsername(currentUName);
+  const handleStartEditUser = (user: (typeof users)[0]) => {
+    setEditingUserId(user.id);
+    setEditName(user.name);
+    setEditUsername(user.username);
     setEditPassword('');
+    setEditJabatan(user.jabatan || '');
+    setEditKontakHp(user.kontakHp || '');
   };
 
   const handleSaveUser = (userId: string) => {
-    if (!editUsername.trim()) return;
-    updateUserAccount(userId, editUsername, editPassword ? editPassword : undefined);
+    if (!editUsername.trim() || !editName.trim()) return;
+    updateUserAccount(userId, {
+      name: editName.trim(),
+      username: editUsername.trim(),
+      ...(editPassword ? { password: editPassword.trim() } : {}),
+      jabatan: editJabatan.trim(),
+      kontakHp: editKontakHp.trim(),
+    });
     setEditingUserId(null);
   };
 
@@ -210,8 +226,87 @@ export const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ activeTab })
               )}
             </div>
 
+            {/* Cloud Firebase Multi-Device Sync Card */}
+            <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-700/80 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-sky-950 border border-sky-500/40 text-sky-400">
+                    <Cloud className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white">Sinkronisasi Cloud Firebase</h4>
+                    <p className="text-[10px] text-slate-400">
+                      Real-time database antarperangkat (HP, Tablet, Laptop)
+                    </p>
+                  </div>
+                </div>
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-bold border flex items-center gap-1 ${
+                    syncStatus.isConnected
+                      ? 'bg-emerald-950 text-emerald-300 border-emerald-500/40'
+                      : syncStatus.isSyncing
+                      ? 'bg-amber-950 text-amber-300 border-amber-500/40'
+                      : 'bg-rose-950 text-rose-300 border-rose-500/40'
+                  }`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      syncStatus.isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'
+                    }`}
+                  />
+                  {syncStatus.isConnected
+                    ? 'Terhubung'
+                    : syncStatus.isSyncing
+                    ? 'Menghubungkan'
+                    : 'Offline'}
+                </span>
+              </div>
+
+              <div className="text-[11px] text-slate-300 space-y-1 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Database Engine:</span>
+                  <span className="font-mono text-sky-300 font-semibold">Google Cloud Firestore</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Sinkron Terakhir:</span>
+                  <span className="font-mono text-slate-200">
+                    {syncStatus.lastSyncTime
+                      ? new Date(syncStatus.lastSyncTime).toLocaleTimeString('id-ID', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                        })
+                      : 'Baru Saja'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Oleh:</span>
+                  <span className="text-slate-300 font-medium">
+                    {syncStatus.lastUpdatedBy || 'Sistem RT.03'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <p className="text-[10px] text-slate-400 leading-tight">
+                  Semua input data (presensi ronda, tagihan kas, pengumuman, aspirasi) langsung terupdate di semua HP pengurus dan warga tanpa refresh.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => forceSyncToCloud()}
+                  disabled={syncStatus.isSyncing}
+                  className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white text-xs font-bold shrink-0 flex items-center gap-1 shadow-md shadow-sky-950 transition active:scale-95"
+                >
+                  <RefreshCw
+                    className={`w-3 h-3 ${syncStatus.isSyncing ? 'animate-spin' : ''}`}
+                  />
+                  <span>Sync Sekarang</span>
+                </button>
+              </div>
+            </div>
+
             {/* WhatsApp Fonnte Settings */}
-            <div className="space-y-3">
+            <div className="space-y-3 pt-2 border-t border-slate-700/60">
               <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
                 1. Integrasi WhatsApp Gateway (Fonnte)
               </h4>
@@ -384,36 +479,83 @@ export const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ activeTab })
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="font-bold text-white text-sm">{u.name}</span>
-                      <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-mono uppercase">
-                        {u.role}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-white text-sm">{u.name}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-500/40 font-mono uppercase">
+                          {u.role}
+                        </span>
+                      </div>
+                      {u.jabatan && (
+                        <p className="text-[11px] text-amber-300 font-medium mt-0.5">
+                          {u.jabatan}
+                        </p>
+                      )}
                     </div>
 
                     {!isEditing && (
                       <button
-                        onClick={() => handleStartEditUser(u.id, u.username)}
+                        onClick={() => handleStartEditUser(u)}
                         className="text-xs px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-purple-300 font-medium border border-purple-500/30 transition"
                       >
-                        Reset / Edit
+                        Edit Profil & Akun
                       </button>
                     )}
                   </div>
 
                   {!isEditing ? (
-                    <div className="grid grid-cols-2 gap-2 text-slate-400 font-mono text-[11px]">
-                      <div>
-                        Username: <span className="text-slate-200 font-bold">{u.username}</span>
+                    <div className="space-y-1 pt-1">
+                      <div className="grid grid-cols-2 gap-2 text-slate-400 font-mono text-[11px]">
+                        <div>
+                          Username: <span className="text-slate-200 font-bold">{u.username}</span>
+                        </div>
+                        <div>
+                          Password: <span className="text-slate-200">•••••••• ({u.password})</span>
+                        </div>
                       </div>
-                      <div>
-                        Password: <span className="text-slate-200">•••••••• ({u.password})</span>
-                      </div>
+                      {u.kontakHp && (
+                        <div className="text-[11px] text-slate-400">
+                          Kontak/WA: <span className="text-emerald-400 font-mono">{u.kontakHp}</span>
+                        </div>
+                      )}
                     </div>
                   ) : (
-                    <div className="pt-2 border-t border-slate-800 space-y-2">
+                    <div className="pt-2 border-t border-slate-800 space-y-2.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Nama Lengkap Pengurus/User:</label>
+                          <input
+                            type="text"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Jabatan / Peran:</label>
+                          <input
+                            type="text"
+                            placeholder="Contoh: Ketua RT.03 / Bendahara Kas"
+                            value={editJabatan}
+                            onChange={(e) => setEditJabatan(e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-slate-400 block mb-0.5">No. Kontak / WhatsApp:</label>
+                        <input
+                          type="text"
+                          placeholder="628123456789"
+                          value={editKontakHp}
+                          onChange={(e) => setEditKontakHp(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white font-mono"
+                        />
+                      </div>
+
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="text-[10px] text-slate-400 block mb-0.5">Username Baru:</label>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Username Login:</label>
                           <input
                             type="text"
                             value={editUsername}
@@ -446,7 +588,7 @@ export const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ activeTab })
                           onClick={() => handleSaveUser(u.id)}
                           className="px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold"
                         >
-                          Simpan Perubahan
+                          Simpan Profil & Akun
                         </button>
                       </div>
                     </div>

@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // RT.03 Multi-Device Synchronization Rules
+    match /warga/{wargaId} {
+      allow read, write: if true;
+    }
+    match /ronda_schedules/{scheduleId} {
+      allow read, write: if true;
+    }
+    match /presensi_ronda/{presensiId} {
+      allow read, write: if true;
+    }
+    match /denda_ronda/{dendaId} {
+      allow read, write: if true;
+    }
+    match /kerja_bakti/{eventId} {
+      allow read, write: if true;
+    }
+    match /surat/{suratId} {
+      allow read, write: if true;
+    }
+    match /pengumuman/{pengumumanId} {
+      allow read, write: if true;
+    }
+    match /keluhan/{keluhanId} {
+      allow read, write: if true;
+    }
+    match /tagihan/{tagihanId} {
+      allow read, write: if true;
+    }
+    match /pengeluaran/{pengeluaranId} {
+      allow read, write: if true;
+    }
+    match /pemasukan/{pemasukanId} {
+      allow read, write: if true;
+    }
+    match /hutang/{hutangId} {
+      allow read, write: if true;
+    }
+    match /piutang_lainnya/{piutangId} {
+      allow read, write: if true;
+    }
+    match /app_settings/{settingsId} {
+      allow read, write: if true;
+    }
+    match /sync_metadata/{metaId} {
+      allow read, write: if true;
+    }
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

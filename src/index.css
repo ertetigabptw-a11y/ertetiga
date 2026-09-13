@@ -6,14 +6,22 @@
   --font-mono: 'JetBrains Mono', monospace;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: #f8fafc;
   color: #0f172a;
-  margin: 0;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
-  overflow-x: hidden;
+  overscroll-behavior-y: contain;
 }
 
 /* Custom minimal scrollbar */

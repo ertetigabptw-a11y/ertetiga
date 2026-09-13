@@ -27,13 +27,14 @@ export function exportToCSV(filename: string, rows: (string | number)[][]) {
   document.body.removeChild(link);
 }
 
-export function formatRupiah(amount: number): string {
+export function formatRupiah(amount?: number | null): string {
+  const safeVal = amount === undefined || amount === null || isNaN(amount) ? 0 : amount;
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
     currency: 'IDR',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(safeVal);
 }
 
 export function openPrintDialog() {

@@ -22,9 +22,12 @@ import {
   Eye,
   Calendar,
   Phone,
+  MessageSquare,
   Mail,
   Share2,
+  RotateCcw,
 } from 'lucide-react';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 interface KetuaRTModuleProps {
   activeTab: string;
@@ -39,6 +42,7 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
     addKerjaBaktiEvent,
     updateKerjaBaktiAttendance,
     pushDendaKerjaBaktiToBendahara,
+    unpushDendaKerjaBaktiFromBendahara,
     suratList,
     addSurat,
     updateSurat,
@@ -58,6 +62,7 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterBlok, setFilterBlok] = useState<string>('ALL');
   const [filterStatusHuni, setFilterStatusHuni] = useState<string>('ALL');
+  const [filterStatusUsia, setFilterStatusUsia] = useState<string>('ALL');
   const [selectedWarga, setSelectedWarga] = useState<Warga | null>(null);
   const [isEditingWarga, setIsEditingWarga] = useState(false);
   const [editWargaForm, setEditWargaForm] = useState<Partial<Warga>>({});
@@ -117,7 +122,8 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
       `${w.blok}/${w.noRumah}`.toLowerCase().includes(searchTerm.toLowerCase());
     const matchBlok = filterBlok === 'ALL' || w.blok === filterBlok;
     const matchHuni = filterStatusHuni === 'ALL' || w.statusHuni === filterStatusHuni;
-    return matchSearch && matchBlok && matchHuni;
+    const matchUsia = filterStatusUsia === 'ALL' || w.statusUsiaPenghuni === filterStatusUsia;
+    return matchSearch && matchBlok && matchHuni && matchUsia;
   });
 
   // Male residents for Kerja Bakti
@@ -126,13 +132,25 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
   // Handlers for Warga
   const handleStartEditWarga = (w: Warga) => {
     setSelectedWarga(w);
-    setEditWargaForm({ ...w });
+    const phone = w.kontakHp || w.hpPenghuni || w.hpPemilik || '';
+    setEditWargaForm({
+      ...w,
+      kontakHp: phone,
+      hpPenghuni: w.hpPenghuni || phone,
+      hpPemilik: w.hpPemilik || phone,
+    });
     setIsEditingWarga(true);
   };
 
   const handleSaveWarga = () => {
     if (!selectedWarga) return;
-    updateWarga(selectedWarga.id, editWargaForm);
+    const phone = (editWargaForm.kontakHp || editWargaForm.hpPenghuni || editWargaForm.hpPemilik || '').trim();
+    updateWarga(selectedWarga.id, {
+      ...editWargaForm,
+      kontakHp: phone,
+      hpPenghuni: editWargaForm.hpPenghuni || phone,
+      hpPemilik: editWargaForm.hpPemilik || phone,
+    });
     setIsEditingWarga(false);
     setSelectedWarga(null);
   };
@@ -149,12 +167,12 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
       'Status Usia',
       'Domisili Kerja',
       'Kriteria Ronda',
-      'Kontak HP',
+      'Nomor WhatsApp / HP',
       'Total Iuran',
       'Saldo Awal Bulan Lalu',
     ];
-    const rows = wargaList.map((w) => [
-      w.id,
+    const rows = wargaList.map((w, idx) => [
+      idx + 1,
       w.blok,
       w.noRumah,
       w.statusHuni,
@@ -164,7 +182,7 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
       w.statusUsiaPenghuni,
       w.domisiliKerja,
       w.kriteriaRonda,
-      w.kontakHp,
+      w.kontakHp || w.hpPenghuni || w.hpPemilik || '',
       w.totalIuran,
       w.saldoAwalBulanLalu,
     ]);
@@ -222,9 +240,13 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
       isi = 'Dalam rangka menjaga kebersihan lingkungan dan pencegahan genangan air, kami mengundang seluruh bapak-bapak untuk hadir dalam kegiatan kerja bakti.';
       agenda = '1. Normalisasi saluran air/got\n2. Pemotongan rumput jalan utama\n3. Perapihan pos ronda';
     } else if (jenis === 'pengantar_administrasi') {
-      perihal = 'Surat Pengantar Keterangan Domisili / Administrasi';
-      isi = 'Menerangkan bahwa nama tersebut di atas adalah benar warga kami yang berdomisili di RT.03 RW.14 Perum BPTW Kelurahan Gumilir, Kecamatan Cilacap Utara.';
-      agenda = '';
+      perihal = 'Surat Pengantar Keterangan RT.03 RW.14 Perum BPTW';
+      isi = 'Yang bertanda tangan di bawah ini Ketua RT.03 RW.14 Perum BPTW Kelurahan Gumilir, Kecamatan Cilacap Utara, menerangkan bahwa warga tersebut di atas adalah benar penduduk yang berdomisili sah di lingkungan RT.03 RW.14, berkepribadian baik, dan tertib bermasyarakat.\n\nDemikian surat pengantar ini dibuat dengan sebenarnya untuk dipergunakan dalam pengurusan administrasi kependudukan (KTP/KK), permohonan ke tingkat RW / Kelurahan Gumilir, atau instansi terkait.';
+      agenda = 'Keperluan: Pengurusan KTP / KK / Surat Keterangan Domisili / Administrasi Resmi';
+    } else if (jenis === 'surat_peringatan') {
+      perihal = 'SURAT PERINGATAN (SP) KEPATUHAN & TATA TERTIB RT.03';
+      isi = 'Berdasarkan musyawarah warga dan tata tertib RT.03 RW.14 Perum BPTW, bersama ini pengurus RT menyampaikan Peringatan Tertulis kepada yang bersangkutan sehubungan dengan adanya ketidakpatuhan / keterlambatan pemenuhan kewajiban (iuran kas / ketertiban jadwal ronda malam / ketertiban lingkungan) yang belum diselesaikan.\n\nMohon untuk segera mengonfirmasi dan menyelesaikan kewajiban tersebut demi menjaga kerukunan dan keharmonisan bersama seluruh warga.';
+      agenda = 'Batas Waktu Koordinasi: 3 (tiga) hari kerja sejak surat ini disampaikan.';
     } else if (jenis === 'somasi') {
       perihal = 'SURAT TEGURAN / SOMASI KEPATUHAN LINGKUNGAN RT.03';
       isi = 'Sehubungan dengan catatan kepengurusan RT.03 terkait ketertiban lingkungan / tunggakan kewajiban iuran yang belum terselesaikan, bersama ini pengurus RT menyampaikan peringatan resmi untuk segera menyelesaikan kewajiban tersebut demi kenyamanan bersama.';
@@ -280,25 +302,207 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
     }
   };
 
+  // Confirm modal state
+  const [confirmModalConfig, setConfirmModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: React.ReactNode;
+    confirmLabel?: string;
+    cancelLabel?: string;
+    confirmVariant?: 'primary' | 'danger' | 'warning' | 'success' | 'whatsapp';
+    icon?: 'push' | 'unpush' | 'whatsapp' | 'danger' | 'info' | 'help';
+    isLoading?: boolean;
+    onConfirm: () => void | Promise<void>;
+    onCancel?: () => void;
+    onClose?: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const closeConfirmModal = () => {
+    setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
+  };
+
+  const handlePromptPushDendaKB = () => {
+    if (!currentKBEvent) return;
+    const alpaList = currentKBEvent.kehadiran.filter((k) => !k.hadir);
+    const totalDenda = alpaList.length * currentKBEvent.dendaPerAlpa;
+
+    setConfirmModalConfig({
+      isOpen: true,
+      title: 'Konfirmasi Push Denda Kerja Bakti',
+      icon: 'push',
+      confirmVariant: 'warning',
+      confirmLabel: 'Ya, Push ke Bendahara',
+      message: (
+        <div className="space-y-2">
+          <p>
+            Anda akan menyinkronkan denda kerja bakti kegiatan <strong>{currentKBEvent.judul}</strong> ({currentKBEvent.tanggal}) ke Buku Tagihan Kas Bendahara RT.03.
+          </p>
+          <div className="p-3 rounded-xl bg-slate-800 border border-slate-700 text-[11px] space-y-1">
+            <div className="flex justify-between">
+              <span className="text-slate-400">Total Warga Hadir:</span>
+              <strong className="text-emerald-400 font-bold">{currentKBEvent.kehadiran.filter((k) => k.hadir).length} orang</strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Warga Alpa (Kena Denda):</span>
+              <strong className="text-rose-400 font-bold">{alpaList.length} orang</strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Tarif Denda per Alpa:</span>
+              <strong className="text-slate-200 font-mono">{formatRupiah(currentKBEvent.dendaPerAlpa)}</strong>
+            </div>
+            <div className="flex justify-between border-t border-slate-700 pt-1">
+              <span className="text-slate-300 font-semibold">Total Denda Di-push:</span>
+              <strong className="text-amber-400 font-mono text-xs">{formatRupiah(totalDenda)}</strong>
+            </div>
+          </div>
+          <p className="text-[11px] text-slate-400">
+            Nilai denda ini akan masuk ke kartu tagihan iuran bulanan warga yang bersangkutan di modul Bendahara.
+          </p>
+        </div>
+      ),
+      onConfirm: () => {
+        pushDendaKerjaBaktiToBendahara(currentKBEvent.id);
+        closeConfirmModal();
+      },
+    });
+  };
+
+  const handlePromptUnpushDendaKB = () => {
+    if (!currentKBEvent) return;
+    setConfirmModalConfig({
+      isOpen: true,
+      title: 'Konfirmasi Unpush Denda Kerja Bakti',
+      icon: 'unpush',
+      confirmVariant: 'danger',
+      confirmLabel: 'Ya, Unpush Denda',
+      message: (
+        <div className="space-y-2">
+          <p>
+            Apakah Anda yakin ingin <strong>menarik kembali (unpush)</strong> denda kerja bakti untuk kegiatan <strong>{currentKBEvent.judul}</strong>?
+          </p>
+          <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-800/50 text-[11px] text-rose-200 space-y-1">
+            <p className="font-semibold">Efek Pembatalan:</p>
+            <p>• Komponen tagihan denda kerja bakti pada warga terkait di buku tagihan Bendahara akan ditarik/dikurangkan kembali.</p>
+            <p>• Status kegiatan ini akan kembali menjadi draf (belum di-push).</p>
+          </div>
+        </div>
+      ),
+      onConfirm: () => {
+        unpushDendaKerjaBaktiFromBendahara(currentKBEvent.id);
+        closeConfirmModal();
+      },
+    });
+  };
+
+  const handlePromptBroadcastSurat = (srt: SuratRT) => {
+    setConfirmModalConfig({
+      isOpen: true,
+      title: 'Konfirmasi Siaran Surat via WhatsApp',
+      icon: 'whatsapp',
+      confirmVariant: 'whatsapp',
+      confirmLabel: 'Ya, Kirim Surat Sekarang',
+      message: (
+        <div className="space-y-2">
+          <p>
+            Kirim surat resmi pengurus RT.03 melalui WhatsApp Gateway (Fonnte API):
+          </p>
+          <div className="p-3 rounded-xl bg-slate-800 border border-slate-700 text-[11px] space-y-1.5">
+            <div className="flex justify-between">
+              <span className="text-slate-400">No. Surat:</span>
+              <strong className="font-mono text-slate-200">{srt.nomorSurat}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Perihal:</span>
+              <strong className="text-amber-400">{srt.perihal}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Tujuan:</span>
+              <span className="text-slate-200">{srt.tujuan}</span>
+            </div>
+            <div className="flex justify-between border-t border-slate-700 pt-1">
+              <span className="text-slate-400">Target Nomor:</span>
+              <strong className="font-mono text-emerald-400">{srt.targetHp || settings.targetGroupWa}</strong>
+            </div>
+          </div>
+        </div>
+      ),
+      onConfirm: async () => {
+        closeConfirmModal();
+        await handleBroadcastSurat(srt.id);
+      },
+    });
+  };
+
   // Handlers for Pengumuman
   const handleSavePengumuman = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pgmJudul.trim() || !pgmIsi.trim()) return;
 
-    await addPengumuman(
-      {
-        judul: pgmJudul,
-        isi: pgmIsi,
-        tanggal: new Date().toISOString().slice(0, 10),
-        kategori: pgmKategori,
-        author: 'Ketua RT.03 RW.14',
-      },
-      pgmSendWA
-    );
-
-    setPgmJudul('');
-    setPgmIsi('');
-    setShowPengumumanModal(false);
+    if (pgmSendWA) {
+      setConfirmModalConfig({
+        isOpen: true,
+        title: 'Konfirmasi Siaran Pengumuman via WhatsApp',
+        icon: 'whatsapp',
+        confirmVariant: 'whatsapp',
+        confirmLabel: 'Ya, Terbitkan & Siarkan WA',
+        message: (
+          <div className="space-y-2">
+            <p>
+              Pengumuman ini akan diterbitkan di papan pengumuman aplikasi dan disiarkan langsung ke <strong>Grup WhatsApp Warga RT.03 RW.14</strong>.
+            </p>
+            <div className="p-3 rounded-xl bg-slate-800 border border-slate-700 text-[11px] space-y-1">
+              <div>
+                <span className="text-slate-400 block text-[10px]">Judul Pengumuman:</span>
+                <strong className="text-amber-400 text-xs">{pgmJudul}</strong>
+              </div>
+              <div className="pt-1">
+                <span className="text-slate-400 block text-[10px]">Kategori:</span>
+                <span className="text-slate-200">{pgmKategori}</span>
+              </div>
+              <div className="pt-1 border-t border-slate-700">
+                <span className="text-slate-400 block text-[10px]">Target Grup WA:</span>
+                <span className="font-mono text-emerald-400">{settings.targetGroupWa}</span>
+              </div>
+            </div>
+          </div>
+        ),
+        onConfirm: async () => {
+          closeConfirmModal();
+          await addPengumuman(
+            {
+              judul: pgmJudul,
+              isi: pgmIsi,
+              tanggal: new Date().toISOString().slice(0, 10),
+              kategori: pgmKategori,
+              author: 'Ketua RT.03 RW.14',
+            },
+            true
+          );
+          setPgmJudul('');
+          setPgmIsi('');
+          setShowPengumumanModal(false);
+        },
+      });
+    } else {
+      await addPengumuman(
+        {
+          judul: pgmJudul,
+          isi: pgmIsi,
+          tanggal: new Date().toISOString().slice(0, 10),
+          kategori: pgmKategori,
+          author: 'Ketua RT.03 RW.14',
+        },
+        false
+      );
+      setPgmJudul('');
+      setPgmIsi('');
+      setShowPengumumanModal(false);
+    }
   };
 
   return (
@@ -379,13 +583,27 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
                 <option value="Kosong">Kosong</option>
                 <option value="Tanah">Tanah</option>
               </select>
+
+              <select
+                value={filterStatusUsia}
+                onChange={(e) => setFilterStatusUsia(e.target.value)}
+                className="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-200"
+              >
+                <option value="ALL">Semua Status Usia</option>
+                <option value="Produktif">⚡ Produktif (37)</option>
+                <option value="Lansia">👴 Lansia (5)</option>
+                <option value="-">- (Tanpa Penghuni)</option>
+              </select>
             </div>
           </div>
 
           {/* List Warga Cards */}
           <div className="space-y-2">
-            <div className="text-[11px] text-slate-400 px-1">
-              Menampilkan {filteredWarga.length} dari {wargaList.length} kavling
+            <div className="text-[11px] text-slate-400 px-1 flex items-center justify-between">
+              <span>Menampilkan {filteredWarga.length} dari {wargaList.length} kavling</span>
+              <span className="text-[10px] text-slate-500">
+                {wargaList.filter((w) => w.statusUsiaPenghuni === 'Produktif').length} Produktif • {wargaList.filter((w) => w.statusUsiaPenghuni === 'Lansia').length} Lansia
+              </span>
             </div>
 
             {filteredWarga.map((w) => (
@@ -395,7 +613,7 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="font-bold text-white text-sm">
                         {w.namaPenghuni !== '-' ? w.namaPenghuni : w.namaPemilik || 'Tanpa Nama'}
                       </span>
@@ -410,6 +628,15 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
                       >
                         {w.statusHuni}
                       </span>
+                      {w.statusUsiaPenghuni === 'Lansia' ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-950 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                          👴 Lansia
+                        </span>
+                      ) : w.statusUsiaPenghuni === 'Produktif' ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-950 text-indigo-300 border border-indigo-500/40 flex items-center gap-1">
+                          ⚡ Produktif
+                        </span>
+                      ) : null}
                     </div>
                     <p className="text-slate-400 text-[11px]">
                       Kavling: <span className="text-slate-200 font-mono font-bold">Blok {w.blok}/{w.noRumah}</span>
@@ -444,19 +671,55 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
                     </span>
                   </div>
                   <div>
-                    Gender / Usia: <span>{w.jenisKelamin}, {w.statusUsiaPenghuni}</span>
+                    Status Usia:{' '}
+                    <span className={`font-semibold ${w.statusUsiaPenghuni === 'Lansia' ? 'text-amber-300 font-bold' : w.statusUsiaPenghuni === 'Produktif' ? 'text-indigo-300' : 'text-slate-400'}`}>
+                      {w.statusUsiaPenghuni === 'Lansia' ? '👴 Lansia' : w.statusUsiaPenghuni === 'Produktif' ? '⚡ Produktif' : '-'}
+                    </span>
                   </div>
                   <div>
-                    Domisili: <span>{w.domisiliKerja}</span>
+                    Status Pernikahan:{' '}
+                    <span className="font-semibold text-slate-200">
+                      {w.statusPernikahan || 'Menikah'}
+                    </span>
+                  </div>
+                  <div>
+                    Gender / Tinggal: <span>{w.jenisKelamin}, {w.statusTinggal || '-'}</span>
+                  </div>
+                  <div>
+                    Domisili Kerja: <span>{w.domisiliKerja}</span>
                   </div>
                 </div>
 
-                {w.kontakHp && (
-                  <div className="text-[11px] text-slate-400 flex items-center gap-1 font-mono">
-                    <Phone className="w-3 h-3 text-emerald-400" />
-                    <span>{w.kontakHp}</span>
-                  </div>
-                )}
+                {(() => {
+                  const phone = w.kontakHp || w.hpPenghuni || w.hpPemilik;
+                  if (!phone) return null;
+                  const cleanPhone = phone.replace(/[^0-9]/g, '');
+                  const waNumber = cleanPhone.startsWith('62')
+                    ? cleanPhone
+                    : cleanPhone.startsWith('08')
+                    ? `62${cleanPhone.slice(1)}`
+                    : cleanPhone;
+                  const waUrl = `https://wa.me/${waNumber}`;
+
+                  return (
+                    <div className="pt-2 mt-1 border-t border-slate-700/60 flex items-center justify-between gap-2">
+                      <div className="text-[11px] text-slate-300 flex items-center gap-1.5 font-mono">
+                        <Phone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span>{phone}</span>
+                      </div>
+                      <a
+                        href={waUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 text-[11px] font-medium transition"
+                        title="Chat WhatsApp Warga"
+                      >
+                        <MessageSquare className="w-3 h-3 text-emerald-400" />
+                        <span>Chat WA</span>
+                      </a>
+                    </div>
+                  );
+                })()}
               </div>
             ))}
           </div>
@@ -528,6 +791,34 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
+                      <label className="text-slate-400 block mb-0.5">Status Usia:</label>
+                      <select
+                        value={editWargaForm.statusUsiaPenghuni || '-'}
+                        onChange={(e) => setEditWargaForm({ ...editWargaForm, statusUsiaPenghuni: e.target.value as any })}
+                        className="w-full px-2.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
+                      >
+                        <option value="Produktif">Produktif</option>
+                        <option value="Lansia">Lansia</option>
+                        <option value="-">- (Tanpa Penghuni)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-slate-400 block mb-0.5">Status Tinggal:</label>
+                      <select
+                        value={editWargaForm.statusTinggal || 'Tetap'}
+                        onChange={(e) => setEditWargaForm({ ...editWargaForm, statusTinggal: e.target.value as any })}
+                        className="w-full px-2.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
+                      >
+                        <option value="Tetap">Tetap</option>
+                        <option value="Sementara">Sementara</option>
+                        <option value="-">-</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
                       <label className="text-slate-400 block mb-0.5">Jenis Kelamin:</label>
                       <select
                         value={editWargaForm.jenisKelamin || 'Laki-laki'}
@@ -553,14 +844,35 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
                   </div>
 
                   <div>
-                    <label className="text-slate-400 block mb-0.5">Nomor WhatsApp / HP:</label>
+                    <label className="text-slate-400 block mb-0.5">Status Pernikahan:</label>
+                    <select
+                      value={editWargaForm.statusPernikahan || 'Menikah'}
+                      onChange={(e) => setEditWargaForm({ ...editWargaForm, statusPernikahan: e.target.value as any })}
+                      className="w-full px-2.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
+                    >
+                      <option value="Menikah">Menikah</option>
+                      <option value="Blm Menikah">Blm Menikah</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-slate-400 block mb-0.5">Nomor WhatsApp / Kontak HP:</label>
                     <input
                       type="text"
                       value={editWargaForm.kontakHp || ''}
-                      onChange={(e) => setEditWargaForm({ ...editWargaForm, kontakHp: e.target.value })}
-                      placeholder="628..."
-                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
+                      onChange={(e) =>
+                        setEditWargaForm({
+                          ...editWargaForm,
+                          kontakHp: e.target.value,
+                          hpPenghuni: e.target.value,
+                        })
+                      }
+                      placeholder="Contoh: 628123456789 atau 08123456789"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono text-xs"
                     />
+                    <span className="text-[10px] text-emerald-400/90 mt-0.5 block">
+                      ✓ Terintegrasi ke seluruh modul (Slip Bendahara, Denda Keamanan, Surat RT, Portal Warga).
+                    </span>
                   </div>
 
                   <div>
@@ -654,23 +966,32 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
                   </button>
                 </div>
 
-                {/* Push Denda to Bendahara Button */}
-                <button
-                  onClick={() => pushDendaKerjaBaktiToBendahara(currentKBEvent.id)}
-                  disabled={currentKBEvent.isPushedToBendahara}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition ${
-                    currentKBEvent.isPushedToBendahara
-                      ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/40 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow'
-                  }`}
-                >
-                  <Coins className="w-3.5 h-3.5" />
-                  <span>
-                    {currentKBEvent.isPushedToBendahara
-                      ? 'Denda Sudah Masuk Bendahara'
-                      : 'Push Denda ke Modul Bendahara'}
-                  </span>
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Unpush Denda Kerja Bakti Button */}
+                  <button
+                    onClick={handlePromptUnpushDendaKB}
+                    disabled={!currentKBEvent.isPushedToBendahara}
+                    className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-700 text-rose-300 border border-rose-500/30 text-xs font-semibold flex items-center gap-1.5 transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                    title="Batalkan denda kerja bakti untuk kegiatan ini dari modul Bendahara"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
+                    <span>Unpush Denda</span>
+                  </button>
+
+                  {/* Push Denda to Bendahara Button */}
+                  <button
+                    onClick={handlePromptPushDendaKB}
+                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95"
+                    title="Sinkronkan denda alpa kerja bakti ke modul Bendahara"
+                  >
+                    <Coins className="w-3.5 h-3.5" />
+                    <span>
+                      {currentKBEvent.isPushedToBendahara
+                        ? 'Perbarui Push Denda'
+                        : 'Push Denda ke Modul Bendahara'}
+                    </span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -841,6 +1162,7 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
                 { id: 'undangan_rapat' as const, label: 'Undangan Rapat' },
                 { id: 'undangan_kerja_bakti' as const, label: 'Undangan Kerja Bakti' },
                 { id: 'pengantar_administrasi' as const, label: 'Surat Pengantar' },
+                { id: 'surat_peringatan' as const, label: 'Surat Peringatan (SP)' },
                 { id: 'somasi' as const, label: 'Surat Somasi / Teguran' },
               ].map((template) => (
                 <button
@@ -924,7 +1246,7 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
                     </button>
 
                     <button
-                      onClick={() => handleBroadcastSurat(srt.id)}
+                      onClick={() => handlePromptBroadcastSurat(srt)}
                       disabled={sendingSuratId === srt.id}
                       className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1 transition"
                     >
@@ -966,6 +1288,7 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
                       <option value="undangan_rapat">Undangan Rapat</option>
                       <option value="undangan_kerja_bakti">Undangan Kerja Bakti</option>
                       <option value="pengantar_administrasi">Surat Pengantar</option>
+                      <option value="surat_peringatan">Surat Peringatan (SP)</option>
                       <option value="somasi">Surat Somasi / Teguran</option>
                     </select>
                   </div>
@@ -996,10 +1319,39 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
                     <label className="text-slate-400 block mb-0.5">Kepada / Tujuan:</label>
                     <input
                       type="text"
+                      list="daftar-warga-surat"
                       value={suratForm.tujuan}
-                      onChange={(e) => setSuratForm({ ...suratForm, tujuan: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const match = wargaList.find(
+                          (w) =>
+                            (w.namaPenghuni && w.namaPenghuni.toLowerCase() === val.toLowerCase()) ||
+                            (w.namaPemilik && w.namaPemilik.toLowerCase() === val.toLowerCase()) ||
+                            `${w.blok}/${w.noRumah}`.toLowerCase() === val.toLowerCase()
+                        );
+                        const phone = match ? match.kontakHp || match.hpPenghuni || match.hpPemilik || '' : '';
+                        setSuratForm({
+                          ...suratForm,
+                          tujuan: val,
+                          targetHp: phone || suratForm.targetHp,
+                        });
+                      }}
+                      placeholder="Pilih atau ketik tujuan..."
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs"
                     />
+                    <datalist id="daftar-warga-surat">
+                      <option value="Seluruh Warga RT.03 RW.14" />
+                      {wargaList.map((w) => {
+                        const name = w.namaPenghuni !== '-' ? w.namaPenghuni : w.namaPemilik;
+                        return (
+                          <option
+                            key={w.id}
+                            value={name}
+                            label={`Blok ${w.blok}/${w.noRumah} (${w.kontakHp || w.hpPenghuni || w.hpPemilik || 'No HP'})`}
+                          />
+                        );
+                      })}
+                    </datalist>
                   </div>
 
                   <div>
@@ -1008,7 +1360,8 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
                       type="text"
                       value={suratForm.targetHp}
                       onChange={(e) => setSuratForm({ ...suratForm, targetHp: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono"
+                      placeholder="628... atau Grup WA RT"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono text-xs"
                     />
                   </div>
                 </div>
@@ -1323,23 +1676,37 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
               <Shield className="w-4 h-4 text-blue-400" />
               <span>Jadwal Ronda Petugas (Senin s/d Minggu)</span>
             </h3>
+            <p className="text-[10px] text-slate-400">
+              *Warga dengan status usia Lansia otomatis dikecualikan/disembunyikan dari daftar hadir ronda.
+            </p>
 
             <div className="space-y-1.5 pt-1">
-              {rondaSchedules.map((sch) => (
-                <div
-                  key={sch.hari}
-                  className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between"
-                >
-                  <span className="font-bold text-amber-300 w-16">{sch.hari}</span>
-                  <div className="flex flex-wrap gap-1 flex-1 pl-2">
-                    {sch.petugasNames.map((p) => (
-                      <span key={p} className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-200 text-[10px]">
-                        {p}
-                      </span>
-                    ))}
+              {rondaSchedules.map((sch) => {
+                const activePetugas = sch.petugasNames.filter((p) => {
+                  const w = wargaList.find(
+                    (x) =>
+                      x.namaPenghuni?.trim().toLowerCase() === p.trim().toLowerCase() ||
+                      x.namaPemilik?.trim().toLowerCase() === p.trim().toLowerCase()
+                  );
+                  return w?.statusUsiaPenghuni !== 'Lansia';
+                });
+
+                return (
+                  <div
+                    key={sch.hari}
+                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between"
+                  >
+                    <span className="font-bold text-amber-300 w-16">{sch.hari}</span>
+                    <div className="flex flex-wrap gap-1 flex-1 pl-2">
+                      {activePetugas.map((p) => (
+                        <span key={p} className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-200 text-[10px]">
+                          {p}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -1351,7 +1718,18 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
             </h3>
 
             <div className="space-y-1">
-              {dendaRondaList.slice(0, 5).map((d) => (
+              {dendaRondaList
+                .filter((d) => {
+                  const w = wargaList.find(
+                    (x) =>
+                      x.id === d.wargaId ||
+                      x.namaPenghuni?.trim().toLowerCase() === d.nama.trim().toLowerCase() ||
+                      x.namaPemilik?.trim().toLowerCase() === d.nama.trim().toLowerCase()
+                  );
+                  return w?.statusUsiaPenghuni !== 'Lansia';
+                })
+                .slice(0, 5)
+                .map((d) => (
                 <div
                   key={d.wargaId}
                   className="p-2 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between"
@@ -1387,14 +1765,14 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
             <div className="p-3 rounded-2xl bg-slate-800/80 border border-slate-700">
               <span className="text-[10px] text-slate-400 font-bold uppercase">Total Pemasukan Kas</span>
               <p className="text-base font-black text-emerald-400 font-mono mt-0.5">
-                {formatRupiah(pemasukanList.reduce((acc, curr) => acc + curr.nominal, 0))}
+                {formatRupiah((pemasukanList || []).reduce((acc, curr) => acc + (curr.nominal || 0), 0))}
               </p>
             </div>
 
             <div className="p-3 rounded-2xl bg-slate-800/80 border border-slate-700">
               <span className="text-[10px] text-slate-400 font-bold uppercase">Total Pengeluaran Kas</span>
               <p className="text-base font-black text-rose-400 font-mono mt-0.5">
-                {formatRupiah(pengeluaranList.reduce((acc, curr) => acc + curr.nominal, 0))}
+                {formatRupiah((pengeluaranList || []).reduce((acc, curr) => acc + (curr.nominal || 0), 0))}
               </p>
             </div>
           </div>
@@ -1403,24 +1781,49 @@ export const KetuaRTModule: React.FC<KetuaRTModuleProps> = ({ activeTab }) => {
           <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-2 text-xs">
             <h3 className="font-bold text-white text-sm">11 Komponen Pengeluaran SOP Kas RT</h3>
             <div className="space-y-1.5">
-              {pengeluaranList.map((exp) => (
-                <div
-                  key={exp.id}
-                  className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between"
-                >
-                  <div>
-                    <p className="font-bold text-white">{exp.komponen}</p>
-                    <p className="text-[10px] text-slate-400">{exp.keterangan || exp.namaPenerimaOrPekerjaan}</p>
+              {(!pengeluaranList || pengeluaranList.length === 0) ? (
+                <p className="text-center py-4 text-slate-500 text-xs">Belum ada catatan mutasi pengeluaran kas.</p>
+              ) : (
+                pengeluaranList.map((exp) => (
+                  <div
+                    key={exp.id}
+                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between"
+                  >
+                    <div>
+                      <p className="font-bold text-white">{exp.komponen}</p>
+                      <p className="text-[10px] text-slate-400">{exp.keterangan || exp.namaPenerimaOrPekerjaan}</p>
+                    </div>
+                    <span className="font-mono font-bold text-rose-400">
+                      {formatRupiah(exp.nominal)}
+                    </span>
                   </div>
-                  <span className="font-mono font-bold text-rose-400">
-                    {formatRupiah(exp.nominal)}
-                  </span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
       )}
+
+      {/* Confirmation Dialog Modal */}
+      <ConfirmModal
+        isOpen={confirmModalConfig.isOpen}
+        title={confirmModalConfig.title}
+        message={confirmModalConfig.message}
+        confirmLabel={confirmModalConfig.confirmLabel}
+        cancelLabel={confirmModalConfig.cancelLabel}
+        confirmVariant={confirmModalConfig.confirmVariant}
+        icon={confirmModalConfig.icon}
+        isLoading={confirmModalConfig.isLoading}
+        onConfirm={confirmModalConfig.onConfirm}
+        onCancel={() => {
+          confirmModalConfig.onCancel?.();
+          closeConfirmModal();
+        }}
+        onClose={() => {
+          confirmModalConfig.onClose?.();
+          closeConfirmModal();
+        }}
+      />
     </div>
   );
 };

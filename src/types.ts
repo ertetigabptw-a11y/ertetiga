@@ -6,6 +6,9 @@ export interface UserAccount {
   password: string;
   role: Role;
   name: string;
+  jabatan?: string;
+  kontakHp?: string;
+  avatarUrl?: string;
   wargaId?: number; // linked warga ID for warga role
 }
 
@@ -22,10 +25,13 @@ export interface Warga {
   statusTinggal: 'Tetap' | 'Sementara' | '-';
   domisiliKerja: 'Dalam Kota' | 'Luar Kota' | '-';
   jenisKelamin: 'Laki-laki' | 'Perempuan' | '-';
+  statusPernikahan?: 'Menikah' | 'Blm Menikah';
   alamatPemilik: string;
   email?: string;
   hpPemilik?: string;
   hpPenghuni?: string;
+  kontakHp?: string;
+  avatarUrl?: string;
   catatan: string;
   // Dari sheet Keamanan
   kriteriaRonda: 'Wajib Ronda' | 'Tidak Ronda';
@@ -39,7 +45,8 @@ export interface Warga {
   snackRapat: number;
   jimpitan: number;
   totalIuran: number;
-  saldoAwalBulanLalu: number; // minus = piutang/kurang bayar, plus = dana titipan
+  saldoAwalBulanLalu: number; // minus = piutang/kurang bayar, plus = saldo deposit warga bulan lalu
+  dendaRondaAgustus?: number; // Denda ronda bulan Agustus yang sudah terposting menjadi komponen tagihan
 }
 
 export interface RondaSchedule {
@@ -65,12 +72,23 @@ export interface PresensiRonda {
 export interface DendaRondaEntry {
   wargaId: number;
   nama: string;
+  blok?: string;
+  noRumah?: string;
   statusWajib: 'Wajib Ronda';
   kategori: string;
-  jumlahAlpa: number; // 0-4
-  dendaTotal: number;
+  // Checklist 4 Minggu Ronda:
+  // Dalam 1 minggu warga hanya diperbolehkan satu kali presensi meskipun tidak pada jadwalnya
+  minggu1: boolean; // Hadir Minggu 1 (Tgl 1 - 7)
+  minggu2: boolean; // Hadir Minggu 2 (Tgl 8 - 14)
+  minggu3: boolean; // Hadir Minggu 3 (Tgl 15 - 21)
+  minggu4: boolean; // Hadir Minggu 4 (Tgl 22 - 30/31)
+  jumlahAlpa: number; // 4 dikurangi jumlah minggu yang hadir
+  dendaPerAlpa: number; // Nominal denda per ketidakhadiran (misal Rp 12.500 atau Rp 25.000)
+  dendaTotal: number; // jumlahAlpa * dendaPerAlpa
   statusPushed: boolean;
   periode: string; // e.g. "September 2026"
+  kontakHp?: string;
+  catatan?: string;
 }
 
 export interface KerjaBaktiEvent {
@@ -91,7 +109,7 @@ export interface KerjaBaktiEvent {
 
 export interface SuratRT {
   id: string;
-  jenis: 'undangan_rapat' | 'undangan_kerja_bakti' | 'pengantar_administrasi' | 'somasi';
+  jenis: 'undangan_rapat' | 'undangan_kerja_bakti' | 'pengantar_administrasi' | 'somasi' | 'surat_peringatan';
   nomorSurat: string;
   tanggal: string;
   perihal: string;
@@ -102,6 +120,12 @@ export interface SuratRT {
   agenda?: string;
   isiSurat: string;
   penandatangan: string;
+  nik?: string;
+  keperluan?: string;
+  berlakuHingga?: string;
+  pekerjaan?: string;
+  agama?: string;
+  statusPernikahan?: 'Menikah' | 'Blm Menikah';
   statusKirimWA?: 'Terkirim' | 'Belum' | 'Gagal';
   tglKirimWA?: string;
 }
@@ -135,6 +159,7 @@ export interface TagihanWarga {
   wargaId: number;
   nama: string;
   blokNo: string;
+  kontakHp?: string;
   periode: string; // e.g. "September 2026"
   // Komponen Iuran
   dansosRT: number;
@@ -144,21 +169,29 @@ export interface TagihanWarga {
   jimpitan: number;
   totalIuran: number;
   // Denda
-  dendaRonda: number;
+  dendaRonda: number; // Denda bulan sebelumnya yang ditagihkan bulan ini (Agustus = 0)
+  dendaRondaBulanLalu?: number; // Denda bulan sebelumnya (Agustus = 0)
+  dendaRondaBulanBerjalan?: number; // Akumulasi denda ronda bulan berjalan (September) yang akan ditagihkan bulan depan
   dendaKerjaBakti: number;
   totalDenda: number;
   // Status bulan lalu
-  piutangBulanLalu: number;    // nominal hutang warga ke kas RT
-  titipanBulanLalu: number;    // nominal kelebihan bayar warga sebelumnya
-  titipanDigunakanUntukTagihan: number;
+  piutangBulanLalu: number;    // Kekurangan (-) bayar dari bulan sebelumnya = Piutang Warga (Debit / Hak Kas RT)
+  titipanBulanLalu: number;    // Kelebihan (+) bayar dari bulan sebelumnya = Deposit Awal Warga
+  titipanDigunakanUntukTagihan: number; // Otomatis dipotong untuk tagihan bulan ini
+  depositBulanLalu?: number;   // alias saldo deposit bulan lalu
+  depositDigunakanUntukTagihan?: number; // alias potongan deposit untuk pembayaran tagihan bulan ini
   // Perhitungan
   totalKewajiban: number; // totalIuran + totalDenda + piutangBulanLalu - titipanDigunakanUntukTagihan
   jumlahDibayar: number;
   statusBayar: 'Lunas' | 'Kurang Bayar' | 'Belum Bayar' | 'Lebih Bayar';
-  // Sisa kelebihan bayar bulan ini
-  kelebihanBayar: number;
-  alokasiKelebihan?: 'titipan_bulan_depan' | 'donasi_kas' | 'tarik_kembali';
+  // Sisa saldo deposit warga (setelah dikurangi tagihan bulan ini)
+  kelebihanBayar: number; // sisa saldo deposit yang belum terpakai (dapat dialokasikan untuk Donasi dan/atau Tagihan Bulan Datang)
+  saldoDeposit?: number;  // alias sisa saldo deposit aktif
+  alokasiKelebihan?: 'pembayaran_tagihan' | 'donasi_kas' | 'titipan_bulan_depan' | 'tarik_kembali';
+  alokasiDeposit?: 'pembayaran_tagihan' | 'donasi_kas'; // peruntukan: Donasi atau Pembayaran tagihan bulan depan
   alokasiNominal?: number;
+  alokasiDonasiNominal?: number; // nominal yang dialokasikan untuk Donasi Kas RT
+  alokasiTagihanMendatangNominal?: number; // nominal yang dialokasikan untuk Pembayaran Tagihan di Bulan yang Akan Datang
   tglBayar?: string;
   metodeBayar?: 'Transfer' | 'Tunai / Jimpitan';
   buktiBayar?: string;
@@ -189,7 +222,14 @@ export interface PengeluaranKas {
 export interface PemasukanKas {
   id: string;
   tanggal: string;
-  kategori: 'Iuran Warga' | 'Denda Ronda' | 'Denda Kerja Bakti' | 'Donasi Warga' | 'Kelebihan Bayar Dialihkan Donasi' | 'Lainnya';
+  kategori:
+    | 'Iuran Warga'
+    | 'Denda Ronda'
+    | 'Denda Kerja Bakti'
+    | 'Donasi Warga'
+    | 'Kelebihan Bayar Dialihkan Donasi'
+    | 'Pelunasan Piutang Warga'
+    | 'Lainnya';
   namaSumber: string;
   nominal: number;
   keterangan: string;
@@ -204,6 +244,21 @@ export interface HutangRT {
   sudahDibayar: number;
   sisaHutang: number;
   status: 'Belum Lunas' | 'Lunas';
+  jatuhTempo?: string;
+}
+
+export interface PiutangWargaLainnya {
+  id: string;
+  tanggal: string;
+  namaWarga: string;
+  blokNo?: string;
+  jenis: 'Dana Talangan' | 'Pinjaman Darurat' | 'Penundaan Kewajiban Khusus';
+  deskripsi: string;
+  totalPiutang: number;
+  sudahDibayar: number;
+  sisaPiutang: number;
+  status: 'Belum Lunas' | 'Lunas';
+  jatuhTempo?: string;
 }
 
 export interface AppSettings {
